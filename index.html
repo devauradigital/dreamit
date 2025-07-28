@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#3b82f6">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Dreamit - Goal Tracker</title>
+    <title>Goal Tracker App</title>
     <link rel="manifest" href="/site.webmanifest">
     <link rel="apple-touch-icon" href="/navbarlogo.png">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -172,6 +172,36 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Navigation Bar Adjustments */
+        .nav-tabs {
+            scrollbar-width: none; /* Hide scrollbar for Firefox */
+            -ms-overflow-style: none; /* Hide scrollbar for IE/Edge */
+        }
+
+        .nav-tabs::-webkit-scrollbar {
+            display: none; /* Hide scrollbar for Chrome/Safari */
+        }
+
+        @media (max-width: 768px) {
+            .nav-tabs {
+                display: none; /* Hide horizontal tabs on mobile */
+            }
+
+            #mobileMenu.active {
+                display: block; /* Show mobile menu when active */
+            }
+
+            .tab-btn {
+                font-size: 0.875rem; /* Smaller font size on mobile */
+            }
+        }
+
+        @media (min-width: 768px) {
+            #menuToggle, #mobileMenu {
+                display: none; /* Hide hamburger menu on larger screens */
+            }
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -187,12 +217,25 @@
         </header>
 
         <nav class="mb-8 border-b" style="border-color: #4b5563;">
-            <ul class="flex space-x-8">
-                <li><button class="tab-btn active py-2 px-1 border-b-2 border-blue-400 text-blue-400" data-tab="dashboard" aria-selected="true">Dashboard</button></li>
-                <li><button class="tab-btn py-2 px-1 hover:text-blue-400" data-tab="analytics" aria-selected="false">Analytics</button></li>
-                <li><button class="tab-btn py-2 px-1 hover:text-blue-400" data-tab="notifications" aria-selected="false">Notifications</button></li>
-                <li><button class="tab-btn py-2 px-1 hover:text-blue-400" data-tab="export-import" aria-selected="false">Export/Import</button></li>
-            </ul>
+            <div class="flex justify-between items-center">
+                <ul class="nav-tabs flex space-x-4 sm:space-x-8 overflow-x-auto md:overflow-visible">
+                    <li><button class="tab-btn active py-2 px-1 border-b-2 border-blue-400 text-blue-400 text-sm sm:text-base" data-tab="dashboard" aria-selected="true">Dashboard</button></li>
+                    <li><button class="tab-btn py-2 px-1 hover:text-blue-400 text-sm sm:text-base" data-tab="analytics" aria-selected="false">Analytics</button></li>
+                    <li><button class="tab-btn py-2 px-1 hover:text-blue-400 text-sm sm:text-base" data-tab="settings" aria-selected="false">Settings</button></li>
+                </ul>
+                <button id="menuToggle" class="md:hidden text-gray-200 focus:outline-none">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+            </div>
+            <div id="mobileMenu" class="hidden md:hidden bg-gray-800 rounded-b-lg">
+                <ul class="flex flex-col space-y-2 p-4">
+                    <li><button class="tab-btn w-full text-left py-2 px-1 hover:text-blue-400 text-sm" data-tab="dashboard" aria-selected="true">Dashboard</button></li>
+                    <li><button class="tab-btn w-full text-left py-2 px-1 hover:text-blue-400 text-sm" data-tab="analytics" aria-selected="false">Analytics</button></li>
+                    <li><button class="tab-btn w-full text-left py-2 px-1 hover:text-blue-400 text-sm" data-tab="settings" aria-selected="false">Settings</button></li>
+                </ul>
+            </div>
         </nav>
 
         <div id="dashboard" class="tab-content active">
@@ -224,8 +267,8 @@
             </div>
         </div>
 
-        <div id="notifications" class="tab-content">
-            <div class="card p-6 rounded-xl">
+        <div id="settings" class="tab-content">
+            <div class="card p-6 rounded-xl mb-6">
                 <h3 class="text-lg font-semibold mb-4" style="color: #e5e7eb;">Notifications</h3>
                 <div class="mb-4">
                     <label for="notificationGoal" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Select Goal</label>
@@ -254,9 +297,6 @@
                     <!-- Notifications will be listed here -->
                 </div>
             </div>
-        </div>
-
-        <div id="export-import" class="tab-content">
             <div class="card p-6 rounded-xl">
                 <h3 class="text-lg font-semibold mb-4" style="color: #e5e7eb;">Export/Import Goals</h3>
                 <div class="flex flex-col space-y-4">
@@ -414,8 +454,7 @@
         const elements = {
             dashboardTab: document.getElementById('dashboard'),
             analyticsTab: document.getElementById('analytics'),
-            notificationsTab: document.getElementById('notifications'),
-            exportImportTab: document.getElementById('export-import'),
+            settingsTab: document.getElementById('settings'),
             tabBtns: document.querySelectorAll('.tab-btn'),
             goalsContainer: document.getElementById('goalsContainer'),
             noGoalsMessage: document.getElementById('noGoalsMessage'),
@@ -469,7 +508,9 @@
             notificationGoalError: document.getElementById('notificationGoalError'),
             notificationMessageError: document.getElementById('notificationMessageError'),
             customIntervalError: document.getElementById('customIntervalError'),
-            loadingSpinner: document.getElementById('loadingSpinner')
+            loadingSpinner: document.getElementById('loadingSpinner'),
+            menuToggle: document.getElementById('menuToggle'),
+            mobileMenu: document.getElementById('mobileMenu')
         };
 
         let goals = [];
@@ -1051,8 +1092,15 @@
                     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
                     document.getElementById(btn.dataset.tab).classList.add('active');
                     if (btn.dataset.tab === 'analytics') updateCharts();
-                    if (btn.dataset.tab === 'notifications') renderNotifications();
+                    if (btn.dataset.tab === 'settings') renderNotifications();
+                    elements.mobileMenu.classList.add('hidden');
+                    elements.mobileMenu.classList.remove('active');
                 });
+            });
+
+            elements.menuToggle.addEventListener('click', () => {
+                elements.mobileMenu.classList.toggle('hidden');
+                elements.mobileMenu.classList.toggle('active');
             });
 
             elements.createFirstGoalBtn.addEventListener('click', openGoalModal);
