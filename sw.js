@@ -1,7 +1,8 @@
-const CACHE_NAME = 'goal-tracker-v1';
+// sw.js
+const CACHE_NAME = 'goal-tracker-cache-v1';
 const urlsToCache = [
+    '/',
     '/index.html',
-    '/site.webmanifest',
     '/navbarlogo.png',
     '/no_goal.png',
     'https://cdn.tailwindcss.com',
@@ -12,25 +13,32 @@ const urlsToCache = [
 
 self.addEventListener('install', event => {
     event.waitUntil(
-        caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+        caches.open(CACHE_NAME)
+            .then(cache => {
+                console.log('Opened cache');
+                return cache.addAll(urlsToCache);
+            })
     );
 });
 
 self.addEventListener('fetch', event => {
     event.respondWith(
-        caches.match(event.request).then(response => response || fetch(event.request))
+        caches.match(event.request)
+            .then(response => response || fetch(event.request))
     );
 });
 
 self.addEventListener('activate', event => {
     const cacheWhitelist = [CACHE_NAME];
     event.waitUntil(
-        caches.keys().then(cacheNames => Promise.all(
-            cacheNames.map(cacheName => {
-                if (!cacheWhitelist.includes(cacheName)) {
-                    return caches.delete(cacheName);
-                }
-            })
-        ))
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cacheName => {
+                    if (!cacheWhitelist.includes(cacheName)) {
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        })
     );
 });
