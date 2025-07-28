@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#3b82f6">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Dremit - Goal Tracker</title>
+    <title>Dreamit Goal Tracker</title>
     <link rel="manifest" href="/site.webmanifest">
     <link rel="apple-touch-icon" href="/navbarlogo.png">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -87,10 +87,7 @@
         .btn {
             transition: all 0.3s ease;
             border-radius: 0.5rem;
-            padding: 0.75rem 1.5rem; /* Increased for better touch target */
-            min-height: 44px; /* Minimum touch target size */
-            min-width: 44px;
-            touch-action: manipulation; /* Improve touch responsiveness */
+            padding: 0.5rem 1rem;
         }
 
         .btn-primary {
@@ -184,12 +181,6 @@
 
         .nav-tabs::-webkit-scrollbar {
             display: none; /* Hide scrollbar for Chrome/Safari */
-        }
-
-        /* Modal Adjustments for Mobile */
-        #goalModal .card, #goalDetailModal .card {
-            max-height: 90vh;
-            overflow-y: auto;
         }
 
         @media (max-width: 768px) {
@@ -293,7 +284,7 @@
         <div id="goalModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" role="dialog" aria-labelledby="modalTitle">
             <div class="card rounded-xl p-6 w-full max-w-md mx-4">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 id="modalTitle" class="text-xl font-semibold" style="color: #e縮4e7eb;">Create New Goal</h3>
+                    <h3 id="modalTitle" class="text-xl font-semibold" style="color: #e5e7eb;">Create New Goal</h3>
                     <button id="closeModalBtn" class="text-gray-400 hover:text-gray-200" aria-label="Close modal">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -395,7 +386,7 @@
                     <input type="range" id="currentAmountSlider" min="0" max="10000" value="0" class="input-field mb-2" aria-label="Current amount">
                     <div class="flex justify-between text-sm mb-2" style="color: #9ca3af;">
                         <span id="currentAmountLabel">₹0</span>
-                        <span id="targetAmountLabel68">₹10000</span>
+                        <span id="targetAmountLabel">₹10000</span>
                     </div>
                     <div class="flex items-center">
                         <input type="number" id="currentAmountInput" min="0" step="1" class="input-field" placeholder="Enter current amount" aria-label="Current amount input">
@@ -428,14 +419,8 @@
         };
 
         // Initialize Firebase
-        let database;
-        try {
-            firebase.initializeApp(firebaseConfig);
-            database = firebase.database();
-        } catch (error) {
-            console.error('Firebase initialization failed:', error);
-            alert('Failed to initialize the application. Please check your internet connection and try again.');
-        }
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
 
         // Cached DOM elements
         const elements = {
@@ -536,27 +521,6 @@
             };
         }
 
-        // Focus Trapping for Modal
-        function trapFocus(modal) {
-            const focusableElements = modal.querySelectorAll(
-                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            );
-            const firstFocusable = focusableElements[0];
-            const lastFocusable = focusableElements[focusableElements.length - 1];
-
-            modal.addEventListener('keydown', (e) => {
-                if (e.key === 'Tab') {
-                    if (e.shiftKey && document.activeElement === firstFocusable) {
-                        e.preventDefault();
-                        lastFocusable.focus();
-                    } else if (!e.shiftKey && document.activeElement === lastFocusable) {
-                        e.preventDefault();
-                        firstFocusable.focus();
-                    }
-                }
-            });
-        }
-
         // Notification Functions
         function requestNotificationPermission() {
             if ('Notification' in window) {
@@ -635,20 +599,14 @@
         }
 
         // Firebase Database Functions
-        function handleFirebaseError(error, message) {
-            console.error(message, error);
-            alert(`${message}: ${error.message}`);
-        }
-
         function saveGoals() {
             const updates = {};
             goals.forEach(goal => {
                 updates['goals/' + goal.id] = goal;
             });
-            database.ref().update(updates).then(() => {
-                console.log('Goals saved successfully');
-            }).catch(error => {
-                handleFirebaseError(error, 'Failed to save goals');
+            database.ref().update(updates).catch(error => {
+                console.error('Error saving goals:', error);
+                alert('Failed to save goals');
             });
         }
 
@@ -658,7 +616,8 @@
                 updates['notifications/' + notification.id] = notification;
             });
             database.ref().update(updates).catch(error => {
-                handleFirebaseError(error, 'Failed to save notifications');
+                console.error('Error saving notifications:', error);
+                alert('Failed to save notifications');
             });
         }
 
@@ -680,7 +639,8 @@
                 updateNotificationGoalOptions();
                 elements.loadingSpinner.classList.add('hidden');
             }).catch(error => {
-                handleFirebaseError(error, 'Failed to load goals');
+                console.error('Error loading goals:', error);
+                alert('Failed to load goals');
                 elements.loadingSpinner.classList.add('hidden');
                 elements.noGoalsMessage.classList.remove('hidden');
             });
@@ -697,7 +657,8 @@
                 });
                 renderNotifications();
             }).catch(error => {
-                handleFirebaseError(error, 'Failed to load notifications');
+                console.error('Error loading notifications:', error);
+                alert('Failed to load notifications');
             });
         }
 
@@ -887,12 +848,7 @@
                 addMoreCard.className = 'card rounded-xl p-5 flex items-center justify-center';
                 addMoreCard.innerHTML = `<button id="addMoreGoalsBtn" class="btn btn-primary w-full h-full text-lg font-semibold">+ Add More Goals</button>`;
                 elements.goalsContainer.appendChild(addMoreCard);
-                const addMoreGoalsBtn = document.getElementById('addMoreGoalsBtn');
-                addMoreGoalsBtn.addEventListener('click', openGoalModal);
-                addMoreGoalsBtn.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    openGoalModal();
-                });
+                document.getElementById('addMoreGoalsBtn').addEventListener('click', openGoalModal);
                 elements.goalsContainer.classList.remove('hidden');
                 elements.noGoalsMessage.classList.add('hidden');
             } else {
@@ -913,19 +869,15 @@
 
         function openEditGoalModal(id) {
             const goal = goals.find(g => g.id === id);
-            if (!goal) {
-                console.error('Goal not found for ID:', id);
-                alert('Goal not found. Please try again.');
-                return;
-            }
+            if (!goal) return;
 
             closeGoalDetailModal();
             elements.modalTitle.textContent = 'Edit Goal';
             elements.submitGoalBtn.textContent = 'Update Goal';
             elements.editGoalId.value = goal.id;
-            elements.goalTitle.value = goal.title || '';
+            elements.goalTitle.value = goal.title;
             elements.goalDescription.value = goal.description || '';
-            elements.goalCategorySelect.value = goal.category || '';
+            elements.goalCategorySelect.value = goal.category;
 
             updateCategoryFields(goal.category);
             if (goal.category === 'finance') {
@@ -934,7 +886,6 @@
 
             elements.goalModal.classList.remove('hidden');
             elements.goalTitle.focus();
-            trapFocus(elements.goalModal);
         }
 
         function openGoalModal() {
@@ -943,7 +894,6 @@
             elements.submitGoalBtn.textContent = 'Create Goal';
             elements.goalModal.classList.remove('hidden');
             elements.goalTitle.focus();
-            trapFocus(elements.goalModal);
         }
 
         function closeGoalModal() {
@@ -1076,7 +1026,7 @@
                         importedGoals.forEach(goal => {
                             const newGoal = {
                                 ...goal,
-                                id: Date.now() + Math.random(),
+                                id: Date.now() + Math.random(), // Use timestamp + random for unique ID
                                 milestones: goal.milestones || []
                             };
                             goals.push(newGoal);
@@ -1088,7 +1038,8 @@
                         updateNotificationGoalOptions();
                         alert('Goals imported successfully!');
                     }).catch(error => {
-                        handleFirebaseError(error, 'Failed to import goals');
+                        console.error('Error importing goals:', error);
+                        alert('Failed to import goals');
                     });
                 } catch (error) {
                     alert('Error importing goals: ' + error.message);
@@ -1154,46 +1105,17 @@
                     if (btn.dataset.tab === 'analytics') updateCharts();
                     if (btn.dataset.tab === 'settings') renderNotifications();
                 });
-                btn.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    btn.click();
-                });
-            });
-
-            const buttons = [
-                elements.createFirstGoalBtn,
-                elements.closeModalBtn,
-                elements.cancelGoalBtn,
-                elements.submitGoalBtn,
-                elements.closeDetailModalBtn,
-                elements.editGoalBtn,
-                elements.deleteGoalBtn,
-                elements.addMilestoneBtn,
-                elements.createNotificationBtn,
-                elements.exportGoalsBtn
-            ];
-            buttons.forEach(btn => {
-                if (btn) {
-                    btn.addEventListener('touchend', (e) => {
-                        e.preventDefault();
-                        btn.click();
-                    });
-                }
             });
 
             elements.createFirstGoalBtn.addEventListener('click', openGoalModal);
             elements.closeModalBtn.addEventListener('click', closeGoalModal);
             elements.cancelGoalBtn.addEventListener('click', closeGoalModal);
             elements.closeDetailModalBtn.addEventListener('click', closeGoalDetailModal);
-            elements.editGoalBtn.addEventListener('click', () => {
-                console.log('Opening edit modal for goal ID:', currentGoalId);
-                openEditGoalModal(currentGoalId);
-            });
+            elements.editGoalBtn.addEventListener('click', () => openEditGoalModal(currentGoalId));
 
             elements.goalForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 let hasError = false;
-                let firstErrorElement = null;
 
                 elements.goalTitleError.style.display = 'none';
                 elements.goalCategoryError.style.display = 'none';
@@ -1203,30 +1125,21 @@
                 if (!title) {
                     elements.goalTitleError.style.display = 'block';
                     hasError = true;
-                    if (!firstErrorElement) firstErrorElement = elements.goalTitle;
                 }
 
                 const category = elements.goalCategorySelect.value;
                 if (!category) {
                     elements.goalCategoryError.style.display = 'block';
                     hasError = true;
-                    if (!firstErrorElement) firstErrorElement = elements.goalCategorySelect;
                 }
 
                 const targetAmount = parseFloat(elements.targetAmountInput.value);
                 if (category === 'finance' && (!targetAmount || targetAmount <= 0)) {
                     elements.targetAmountError.style.display = 'block';
                     hasError = true;
-                    if (!firstErrorElement) firstErrorElement = elements.targetAmountInput;
                 }
 
-                if (hasError) {
-                    if (firstErrorElement) {
-                        firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        firstErrorElement.focus();
-                    }
-                    return;
-                }
+                if (hasError) return;
 
                 const description = elements.goalDescription.value.trim();
                 const id = elements.editGoalId.value ? parseInt(elements.editGoalId.value) : Date.now() + Math.random();
@@ -1288,7 +1201,8 @@
                     saveNotifications();
                     goals = goals.filter(g => g.id !== currentGoalId);
                     database.ref('goals/' + currentGoalId).remove().catch(error => {
-                        handleFirebaseError(error, 'Failed to delete goal');
+                        console.error('Error deleting goal:', error);
+                        alert('Failed to delete goal');
                     });
                     closeGoalDetailModal();
                     renderGoals();
@@ -1383,9 +1297,7 @@
 
         // Initialize Firebase and App
         document.addEventListener('DOMContentLoaded', () => {
-            if (database) {
-                initializeApp();
-            }
+            initializeApp();
         });
     </script>
 </body>
