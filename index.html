@@ -3,9 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Goal Tracker App</title>
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="apple-touch-icon" href="/navbarlogo.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDK (Namespaced) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
@@ -104,6 +112,10 @@
             background-color: rgba(239, 68, 68, 0.1);
         }
 
+        .btn-edit:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+
         .input-field, .select-field, .textarea-field {
             width: 100%;
             padding: 0.5rem 0.75rem;
@@ -138,6 +150,28 @@
             margin-top: 0.25rem;
             display: none;
         }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            border: 4px solid rgba(59, 130, 246, 0.2);
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -156,15 +190,20 @@
             <ul class="flex space-x-8">
                 <li><button class="tab-btn active py-2 px-1 border-b-2 border-blue-400 text-blue-400" data-tab="dashboard" aria-selected="true">Dashboard</button></li>
                 <li><button class="tab-btn py-2 px-1 hover:text-blue-400" data-tab="analytics" aria-selected="false">Analytics</button></li>
+                <li><button class="tab-btn py-2 px-1 hover:text-blue-400" data-tab="notifications" aria-selected="false">Notifications</button></li>
                 <li><button class="tab-btn py-2 px-1 hover:text-blue-400" data-tab="export-import" aria-selected="false">Export/Import</button></li>
             </ul>
         </nav>
 
         <div id="dashboard" class="tab-content active">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="goalsContainer">
+            <!-- Loading Spinner -->
+            <div id="loadingSpinner" class="loading-spinner">
+                <div class="spinner"></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 hidden" id="goalsContainer">
                 <!-- Goal Cards and Add More Goals button will be dynamically inserted here -->
             </div>
-            <div id="noGoalsMessage" class="text-center py-20">
+            <div id="noGoalsMessage" class="text-center py-20 hidden">
                 <img src="no_goal.png" alt="No goals yet illustration - peaceful landscape with mountains and a checkmark in the sky" class="mx-auto mb-4 rounded-lg" style="width: 300px; height: 200px;">
                 <h3 class="text-xl font-semibold text-gray-200">No goals yet</h3>
                 <p class="text-gray-400 mb-4">Create your first goal to begin your journey.</p>
@@ -181,6 +220,38 @@
                 <div class="card p-6 rounded-xl">
                     <h3 class="text-lg font-semibold mb-4" style="color: #e5e7eb;">Goal Categories Distribution</h3>
                     <canvas id="categoryChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div id="notifications" class="tab-content">
+            <div class="card p-6 rounded-xl">
+                <h3 class="text-lg font-semibold mb-4" style="color: #e5e7eb;">Notifications</h3>
+                <div class="mb-4">
+                    <label for="notificationGoal" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Select Goal</label>
+                    <select id="notificationGoal" class="select-field" aria-describedby="notificationGoalError">
+                        <option value="">Select a Goal</option>
+                    </select>
+                    <p id="notificationGoalError" class="error-message">Please select a goal</p>
+                </div>
+                <div class="mb-4">
+                    <label for="notificationMessage" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Notification Message</label>
+                    <input type="text" id="notificationMessage" class="input-field" placeholder="Enter notification message" aria-describedby="notificationMessageError">
+                    <p id="notificationMessageError" class="error-message">Please enter a notification message</p>
+                </div>
+                <div class="mb-4">
+                    <label for="notificationInterval" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Notification Interval</label>
+                    <select id="notificationInterval" class="select-field">
+                        <option value="7200000">Every 2 Hours</option>
+                        <option value="10800000">Every 3 Hours</option>
+                        <option value="custom">Custom (in hours)</option>
+                    </select>
+                    <input type="number" id="customInterval" class="input-field mt-2 hidden" placeholder="Enter hours (e.g., 4)" min="1" step="1" aria-describedby="customIntervalError">
+                    <p id="customIntervalError" class="error-message">Please enter a valid number of hours</p>
+                </div>
+                <button id="createNotificationBtn" class="btn btn-primary">Create Notification</button>
+                <div id="notificationsList" class="mt-4 space-y-2">
+                    <!-- Notifications will be listed here -->
                 </div>
             </div>
         </div>
@@ -261,8 +332,7 @@
                         <button id="closeDetailModalBtn" class="text-gray-400 hover:text-gray-200" aria-label="Close modal">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
+                        </svg>
                     </div>
                 </div>
                 
@@ -301,9 +371,7 @@
                 
                 <div id="financeSliderSection" class="hidden">
                     <h4 class="font-medium mb-3" style="color: #e5e7eb;">Current Amount (₹)</h4>
-                    <input type="range" id্র
-
-System: range" id="currentAmountSlider" min="0" max="10000" value="0" class="input-field mb-2" aria-label="Current amount">
+                    <input type="range" id="currentAmountSlider" min="0" max="10000" value="0" class="input-field mb-2" aria-label="Current amount">
                     <div class="flex justify-between text-sm mb-2" style="color: #9ca3af;">
                         <span id="currentAmountLabel">₹0</span>
                         <span id="targetAmountLabel">₹10000</span>
@@ -326,10 +394,27 @@ System: range" id="currentAmountSlider" min="0" max="10000" value="0" class="inp
     </div>
 
     <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyA3Y1aDGpyKD1QM50GpPsl6OsvK026zmOU",
+            authDomain: "goal-tracker-1725.firebaseapp.com",
+            databaseURL: "https://goal-tracker-1725-default-rtdb.firebaseio.com",
+            projectId: "goal-tracker-1725",
+            storageBucket: "goal-tracker-1725.firebasestorage.app",
+            messagingSenderId: "1071901848843",
+            appId: "1:1071901848843:web:55c4186244e40f8b131e0e",
+            measurementId: "G-9RD6ZZ02EY"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
         // Cached DOM elements
         const elements = {
             dashboardTab: document.getElementById('dashboard'),
             analyticsTab: document.getElementById('analytics'),
+            notificationsTab: document.getElementById('notifications'),
             exportImportTab: document.getElementById('export-import'),
             tabBtns: document.querySelectorAll('.tab-btn'),
             goalsContainer: document.getElementById('goalsContainer'),
@@ -374,45 +459,176 @@ System: range" id="currentAmountSlider" min="0" max="10000" value="0" class="inp
             importGoalsInput: document.getElementById('importGoalsInput'),
             goalTitleError: document.getElementById('goalTitleError'),
             goalCategoryError: document.getElementById('goalCategoryError'),
-            targetAmountError: document.getElementById('targetAmountError')
+            targetAmountError: document.getElementById('targetAmountError'),
+            notificationGoal: document.getElementById('notificationGoal'),
+            notificationMessage: document.getElementById('notificationMessage'),
+            notificationInterval: document.getElementById('notificationInterval'),
+            customInterval: document.getElementById('customInterval'),
+            createNotificationBtn: document.getElementById('createNotificationBtn'),
+            notificationsList: document.getElementById('notificationsList'),
+            notificationGoalError: document.getElementById('notificationGoalError'),
+            notificationMessageError: document.getElementById('notificationMessageError'),
+            customIntervalError: document.getElementById('customIntervalError'),
+            loadingSpinner: document.getElementById('loadingSpinner')
         };
 
         let goals = [];
+        let notifications = [];
         let currentGoalId = null;
         let completionChart, categoryChart;
 
         // Utility Functions
         const formatCurrency = (amount) => isNaN(amount) ? '0' : amount.toLocaleString('en-IN');
-        const getCategoryName = (category) => ({
-            'health': 'Health',
-            'career': 'Career',
-            'finance': 'Finance',
-            'personal': 'Personal Growth'
-        }[category] || 'Other');
+        const getCategoryName = (category) => {
+            return {
+                'health': 'Health',
+                'career': 'Career',
+                'finance': 'Finance',
+                'personal': 'Personal Growth'
+            }[category] || 'Other';
+        };
 
-        const getCategoryColor = (category) => ({
-            'health': 'bg-green-900 text-green-300',
-            'career': 'bg-purple-900 text-purple-300',
-            'finance': 'bg-blue-900 text-blue-300',
-            'personal': 'bg-pink-900 text-pink-300'
-        }[category] || 'bg-gray-900 text-gray-300');
+        const getCategoryColor = (category) => {
+            return {
+                'health': 'bg-green-900 text-green-300',
+                'career': 'bg-purple-900 text-purple-300',
+                'finance': 'bg-blue-900 text-blue-300',
+                'personal': 'bg-pink-900 text-pink-300'
+            }[category] || 'bg-gray-900 text-gray-300';
+        };
 
-        // Local Storage Functions
-        function saveGoals() {
-            localStorage.setItem('goals', JSON.stringify(goals));
+        // Notification Functions
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission !== 'granted') {
+                Notification.requestPermission().then(permission => {
+                    if (permission !== 'granted') {
+                        alert('Notifications are disabled. You will receive alerts instead.');
+                    }
+                });
+            }
         }
 
-        function loadGoals() {
-            const saved = localStorage.getItem('goals');
-            if (saved) {
-                goals = JSON.parse(saved);
-                goals.forEach(goal => {
-                    if (!goal.milestones) goal.milestones = [];
+        function showNotification(message, goalId) {
+            const goal = goals.find(g => g.id === goalId);
+            if (!goal) return;
+
+            const notificationMessage = `${message} (Goal: ${goal.title}, Progress: ${goal.progress}%)`;
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('Goal Tracker Reminder', {
+                    body: notificationMessage,
+                    icon: '/navbarlogo.png'
+                });
+            } else {
+                alert(notificationMessage);
+            }
+        }
+
+        function scheduleNotification(notification) {
+            if (notification.interval <= 0) return;
+            notification.timer = setInterval(() => {
+                showNotification(notification.message, notification.goalId);
+            }, notification.interval);
+        }
+
+        function renderNotifications() {
+            elements.notificationsList.innerHTML = '';
+            notifications.forEach(notification => {
+                const goal = goals.find(g => g.id === notification.goalId);
+                if (!goal) return;
+
+                const notificationItem = document.createElement('div');
+                notificationItem.className = 'flex items-center justify-between';
+                notificationItem.innerHTML = `
+                    <div>
+                        <p class="text-sm" style="color: #e5e7eb;">${notification.message}</p>
+                        <p class="text-sm" style="color: #9ca3af;">Goal: ${goal.title} | Every ${notification.interval / 3600000} hours</p>
+                    </div>
+                    <button class="delete-notification-btn text-red-400" data-id="${notification.id}" aria-label="Delete notification">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                `;
+                elements.notificationsList.appendChild(notificationItem);
+            });
+
+            document.querySelectorAll('.delete-notification-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = parseInt(btn.dataset.id);
+                    const notification = notifications.find(n => n.id === id);
+                    if (notification.timer) clearInterval(notification.timer);
+                    notifications = notifications.filter(n => n.id !== id);
+                    database.ref('notifications/' + id).remove().catch(error => {
+                        console.error('Error removing notification:', error);
+                        alert('Failed to remove notification');
+                    });
+                    renderNotifications();
+                });
+            });
+        }
+
+        // Firebase Database Functions
+        function saveGoals() {
+            const updates = {};
+            goals.forEach(goal => {
+                updates['goals/' + goal.id] = goal;
+            });
+            database.ref().update(updates).catch(error => {
+                console.error('Error saving goals:', error);
+                alert('Failed to save goals');
+            });
+        }
+
+        function saveNotifications() {
+            const updates = {};
+            notifications.forEach(notification => {
+                updates['notifications/' + notification.id] = notification;
+            });
+            database.ref().update(updates).catch(error => {
+                console.error('Error saving notifications:', error);
+                alert('Failed to save notifications');
+            });
+        }
+
+        function loadGoalsFromServer() {
+            elements.loadingSpinner.classList.remove('hidden');
+            elements.goalsContainer.classList.add('hidden');
+            elements.noGoalsMessage.classList.add('hidden');
+
+            database.ref('goals').once('value').then(snapshot => {
+                goals = [];
+                snapshot.forEach(childSnapshot => {
+                    const goal = childSnapshot.val();
+                    goal.milestones = goal.milestones || [];
                     updateGoalProgress(goal);
+                    goals.push(goal);
                 });
                 renderGoals();
                 updateCharts();
-            }
+                updateNotificationGoalOptions();
+                elements.loadingSpinner.classList.add('hidden');
+            }).catch(error => {
+                console.error('Error loading goals:', error);
+                alert('Failed to load goals');
+                elements.loadingSpinner.classList.add('hidden');
+                elements.noGoalsMessage.classList.remove('hidden');
+            });
+        }
+
+        function loadNotificationsFromServer() {
+            database.ref('notifications').once('value').then(snapshot => {
+                notifications.forEach(n => { if (n.timer) clearInterval(n.timer); });
+                notifications = [];
+                snapshot.forEach(childSnapshot => {
+                    const notification = childSnapshot.val();
+                    notifications.push(notification);
+                    scheduleNotification(notification);
+                });
+                renderNotifications();
+            }).catch(error => {
+                console.error('Error loading notifications:', error);
+                alert('Failed to load notifications');
+            });
         }
 
         // UI Update Functions
@@ -421,115 +637,128 @@ System: range" id="currentAmountSlider" min="0" max="10000" value="0" class="inp
             elements.targetAmountInput.toggleAttribute('required', category === 'finance');
         }
 
+        function updateNotificationGoalOptions() {
+            elements.notificationGoal.innerHTML = '<option value="">Select a Goal</option>';
+            goals.forEach(goal => {
+                const option = document.createElement('option');
+                option.value = goal.id;
+                option.textContent = goal.title;
+                elements.notificationGoal.appendChild(option);
+            });
+        }
+
         function updateGoalCard(goal) {
             const goalCard = elements.goalsContainer.querySelector(`.goal-card[data-id="${goal.id}"]`);
             if (!goalCard) return;
 
             const progressBar = goalCard.querySelector('.progress-bar');
-            const progressText = goalCard.querySelector('.text-xs.font-medium');
-            const descriptionText = goalCard.querySelector('.text-sm.mb-3');
+            const progressText = goalCard.querySelector('.progress-text');
+            const description = goalCard.querySelector('.goal-description');
 
             progressBar.style.width = `${goal.progress}%`;
             progressText.textContent = `${goal.progress}%`;
-            descriptionText.textContent = goal.description || '';
+            description.textContent = goal.description || '';
             if (goal.category === 'finance') {
-                const financeText = goalCard.querySelector('.text-xs.mt-2');
-                financeText.textContent = `Current: ₹${formatCurrency(goal.currentAmount)} / ₹${formatCurrency(goal.targetAmount)}`;
+                const financeTarget = goalCard.querySelector('.finance-target');
+                financeTarget.textContent = `Amount: ₹${formatCurrency(goal.currentAmount)} / ₹${formatCurrency(goal.targetAmount)}`;
             }
         }
 
         function updateGoalDetailModal(goal) {
-            const {
-                detailGoalTitle, detailDescription, detailCategory, progressPercentage,
-                detailProgressBar, milestoneSection, financeSliderSection, financeProgressText,
-                currentAmountSlider, currentAmountInput, currentAmountLabel, targetAmountLabel,
-                currentAmountDisplay, targetAmountDisplay, milestonesList
-            } = elements;
+            elements.detailGoalTitle.textContent = goal.title || 'Untitled';
+            elements.detailDescription.textContent = goal.description || '';
+            elements.detailCategory.textContent = getCategoryName(goal.category);
+            elements.detailCategory.className = `px-2 py-1 text-xs rounded-full ${getCategoryColor(goal.category)}`;
+            elements.progressPercentage.textContent = `${goal.progress}%`;
+            elements.detailProgressBar.style.width = `${goal.progress}%`;
 
-            detailGoalTitle.textContent = goal.title || 'Untitled';
-            detailDescription.textContent = goal.description || '';
-            detailCategory.textContent = getCategoryName(goal.category);
-            detailCategory.className = `px-2 py-1 text-xs rounded-full ${getCategoryColor(goal.category)}`;
-            progressPercentage.textContent = `${goal.progress}%`;
-            detailProgressBar.style.width = `${goal.progress}%`;
-
-            milestoneSection.classList.toggle('hidden', goal.category === 'finance');
-            financeSliderSection.classList.toggle('hidden', goal.category !== 'finance');
-            financeProgressText.classList.toggle('hidden', goal.category !== 'finance');
+            elements.milestoneSection.classList.toggle('hidden', goal.category === 'finance');
+            elements.financeSliderSection.classList.toggle('hidden', goal.category !== 'finance');
+            elements.financeProgressText.classList.toggle('hidden', goal.category !== 'finance');
 
             if (goal.category === 'finance') {
                 const target = goal.targetAmount || 10000;
-                currentAmountSlider.max = target;
-                currentAmountSlider.value = goal.currentAmount || 0;
-                currentAmountInput.max = target;
-                currentAmountInput.value = goal.currentAmount || 0;
-                currentAmountLabel.textContent = `₹${formatCurrency(goal.currentAmount || 0)}`;
-                targetAmountLabel.textContent = `₹${formatCurrency(target)}`;
-                currentAmountDisplay.textContent = formatCurrency(goal.currentAmount || 0);
-                targetAmountDisplay.textContent = formatCurrency(target);
+                elements.currentAmountSlider.max = target;
+                elements.currentAmountSlider.value = goal.currentAmount || 0;
+                elements.currentAmountInput.max = target;
+                elements.currentAmountInput.value = goal.currentAmount || 0;
+                elements.currentAmountLabel.textContent = `₹${formatCurrency(goal.currentAmount || 0)}`;
+                elements.targetAmountLabel.textContent = `₹${formatCurrency(target)}`;
+                elements.currentAmountDisplay.textContent = formatCurrency(goal.currentAmount || 0);
+                elements.targetAmountDisplay.textContent = formatCurrency(target);
             } else {
-                milestonesList.innerHTML = '';
+                elements.milestonesList.innerHTML = '';
                 (goal.milestones || []).forEach(milestone => {
                     const milestoneItem = document.createElement('div');
                     milestoneItem.className = 'flex items-center';
                     milestoneItem.innerHTML = `
-                        <input type="checkbox" id="milestone-${milestone.id}" class="milestone-checkbox mr-2" ${milestone.completed ? 'checked' : ''} aria-label="${milestone.text}">
+                        <input type="checkbox" id="milestone-${milestone.id}" class="milestone-checkbox" ${milestone.completed ? 'checked' : ''} aria-label="${milestone.text}">
                         <label for="milestone-${milestone.id}" class="flex-grow" style="color: ${milestone.completed ? '#9ca3af' : '#e5e7eb'}; ${milestone.completed ? 'text-decoration: line-through;' : ''}">${milestone.text}</label>
+                        <button class="edit-milestone-btn text-blue-400" data-id="${milestone.id}" title="Edit milestone" aria-label="Edit milestone">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                        </button>
                     `;
-                    milestoneItem.querySelector('input').addEventListener('change', function() {
-                        milestone.completed = this.checked;
+                    elements.milestonesList.appendChild(milestoneItem);
+
+                    milestoneItem.querySelector('.milestone-checkbox').addEventListener('change', (e) => {
+                        milestone.completed = e.target.checked;
                         updateGoalProgress(goal);
+                        saveGoals();
                         renderGoals();
                         updateCharts();
-                        saveGoals();
                     });
-                    milestonesList.appendChild(milestoneItem);
+
+                    milestoneItem.querySelector('.edit-milestone-btn').addEventListener('click', () => {
+                        const newText = prompt('Edit milestone:', milestone.text);
+                        if (newText && newText.trim()) {
+                            milestone.text = newText.trim();
+                            updateGoalDetailModal(goal);
+                            saveGoals();
+                            renderGoals();
+                        }
+                    });
                 });
             }
         }
 
         // Goal Management Functions
         function updateGoalProgress(goal) {
-            if (!goal) return;
             if (goal.category === 'finance') {
-                goal.progress = goal.targetAmount && goal.targetAmount !== 0
-                    ? Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100))
-                    : 0;
+                goal.progress = goal.targetAmount && goal.targetAmount !== 0 ?
+                    Math.min(100, Math.round((goal.currentAmount || 0) / goal.targetAmount * 100)) : 0;
             } else {
-                goal.progress = goal.milestones && goal.milestones.length
-                    ? Math.round((goal.milestones.filter(m => m.completed).length / goal.milestones.length) * 100)
-                    : 0;
+                goal.progress = goal.milestones && goal.milestones.length ?
+                    Math.round((goal.milestones.filter(m => m.completed).length / goal.milestones.length) * 100) : 0;
             }
-
             if (currentGoalId === goal.id) updateGoalDetailModal(goal);
             updateGoalCard(goal);
         }
 
         function renderGoalCard(goal) {
             const goalCard = document.createElement('div');
-            goalCard.className = 'goal-card card rounded-xl p-5 cursor-pointer';
+            goalCard.className = 'card goal-card p-5 rounded-xl';
             goalCard.dataset.id = goal.id;
             goalCard.draggable = true;
-            goalCard.setAttribute('role', 'button');
-            goalCard.setAttribute('aria-label', `View details for ${goal.title}`);
+            goalCard.setAttribute('role', 'option');
+            goalCard.setAttribute('aria-label', `View goal ${goal.title}`);
 
             goalCard.innerHTML = `
-                <div class="flex justify-between items-start mb-2">
-                    <h3 class="font-semibold text-lg" style="color: #e5e7eb;">${goal.title}</h3>
-                    <span class="text-xs px-2 py-1 rounded-full ${getCategoryColor(goal.category)}">
-                        ${getCategoryName(goal.category)}
-                    </span>
+                <div class="flex items-start justify-between mb-2">
+                    <h3 class="text-lg font-semibold" style="color: #e5e7eb;">${goal.title}</h3>
+                    <span class="text-sm px-2 py-1 rounded-full ${getCategoryColor(goal.category)}">${getCategoryName(goal.category)}</span>
                 </div>
-                <p class="text-sm mb-3" style="color: #9ca3af;">${goal.description || ''}</p>
-                <div class="mb-3">
+                <p class="goal-description text-sm mb-3" style="color: #9ca3af;">${goal.description || ''}</p>
+                <div class="progress-section">
                     <div class="flex justify-between mb-1">
-                        <span class="text-xs font-medium text-blue-400">Progress</span>
-                        <span class="text-xs font-medium" style="color: #e5e7eb;">${goal.progress}%</span>
+                        <span class="text-sm font-medium text-blue-400">Progress</span>
+                        <span class="progress-text text-sm" style="color: #e5e7eb;">${goal.progress}%</span>
                     </div>
-                    <div class="w-full rounded-full h-2" style="background-color: #4b5563;">
-                        <div class="h-2 rounded-full progress-bar bg-blue-500" style="width: ${goal.progress}%"></div>
+                    <div class="w-full bg-gray-600 rounded-full h-2.5" style="background-color: #4b5563;">
+                        <div class="progress-bar bg-blue-500 h-2.5 rounded-full" style="width: ${goal.progress}%"></div>
                     </div>
-                    ${goal.category === 'finance' ? `<div class="text-xs mt-2" style="color: #9ca3af;">Current: ₹${formatCurrency(goal.currentAmount)} / ₹${formatCurrency(goal.targetAmount)}</div>` : ''}
+                    ${goal.category === 'finance' ? `<div class="finance-target text-xs mt-2" style="color: #9ca3af;">Current: ₹${formatCurrency(goal.currentAmount)} / ₹${formatCurrency(goal.targetAmount)}</div>` : ''}
                 </div>
             `;
 
@@ -585,12 +814,16 @@ System: range" id="currentAmountSlider" min="0" max="10000" value="0" class="inp
                 addMoreCard.innerHTML = `<button id="addMoreGoalsBtn" class="btn btn-primary w-full h-full text-lg font-semibold">+ Add More Goals</button>`;
                 elements.goalsContainer.appendChild(addMoreCard);
                 document.getElementById('addMoreGoalsBtn').addEventListener('click', openGoalModal);
+                elements.goalsContainer.classList.remove('hidden');
+                elements.noGoalsMessage.classList.add('hidden');
+            } else {
+                elements.goalsContainer.classList.add('hidden');
+                elements.noGoalsMessage.classList.remove('hidden');
             }
-            updateNoGoalsMessage();
         }
 
         function openGoalDetail(id) {
-            const goal = goals.find(g => g.id == id);
+            const goal = goals.find(g => g.id === id);
             if (!goal) return;
 
             currentGoalId = id;
@@ -600,7 +833,7 @@ System: range" id="currentAmountSlider" min="0" max="10000" value="0" class="inp
         }
 
         function openEditGoalModal(id) {
-            const goal = goals.find(g => g.id == id);
+            const goal = goals.find(g => g.id === id);
             if (!goal) return;
 
             closeGoalDetailModal();
@@ -635,8 +868,6 @@ System: range" id="currentAmountSlider" min="0" max="10000" value="0" class="inp
 
         function resetModal() {
             elements.goalForm.reset();
-            elements.modalTitle.textContent = 'Create New Goal';
-            elements.submitGoalBtn.textContent = 'Create Goal';
             elements.editGoalId.value = '';
             elements.goalTitleError.style.display = 'none';
             elements.goalCategoryError.style.display = 'none';
@@ -647,10 +878,6 @@ System: range" id="currentAmountSlider" min="0" max="10000" value="0" class="inp
         function closeGoalDetailModal() {
             elements.goalDetailModal.classList.add('hidden');
             currentGoalId = null;
-        }
-
-        function updateNoGoalsMessage() {
-            elements.noGoalsMessage.classList.toggle('hidden', goals.length > 0);
         }
 
         // Chart Functions
@@ -742,17 +969,26 @@ System: range" id="currentAmountSlider" min="0" max="10000" value="0" class="inp
                 try {
                     const importedGoals = JSON.parse(e.target.result);
                     if (!Array.isArray(importedGoals)) throw new Error('Invalid file format');
-                    goals = importedGoals.map(goal => ({
-                        ...goal,
-                        id: goals.length > 0 ? Math.max(...goals.map(g => g.id)) + 1 : 1,
-                        milestones: goal.milestones || []
-                    }));
-                    goals.forEach(updateGoalProgress);
-                    renderGoals();
-                    updateCharts();
-                    saveGoals();
-                    updateNoGoalsMessage();
-                    alert('Goals imported successfully!');
+                    database.ref('goals').remove().then(() => {
+                        goals = [];
+                        importedGoals.forEach(goal => {
+                            const newGoal = {
+                                ...goal,
+                                id: goals.length > 0 ? Math.max(...goals.map(g => g.id)) + 1 : 1,
+                                milestones: goal.milestones || []
+                            };
+                            goals.push(newGoal);
+                            database.ref('goals/' + newGoal.id).set(newGoal);
+                            updateGoalProgress(newGoal);
+                        });
+                        renderGoals();
+                        updateCharts();
+                        updateNotificationGoalOptions();
+                        alert('Goals imported successfully!');
+                    }).catch(error => {
+                        console.error('Error importing goals:', error);
+                        alert('Failed to import goals');
+                    });
                 } catch (error) {
                     alert('Error importing goals: ' + error.message);
                 }
@@ -763,7 +999,7 @@ System: range" id="currentAmountSlider" min="0" max="10000" value="0" class="inp
         // Slider and Input Handlers
         function setupSliderInputListeners() {
             elements.currentAmountSlider.addEventListener('input', () => {
-                const goal = goals.find(g => g.id == currentGoalId);
+                const goal = goals.find(g => g.id === currentGoalId);
                 if (!goal) return;
 
                 goal.currentAmount = parseFloat(elements.currentAmountSlider.value);
@@ -776,7 +1012,7 @@ System: range" id="currentAmountSlider" min="0" max="10000" value="0" class="inp
             });
 
             elements.currentAmountInput.addEventListener('input', () => {
-                const goal = goals.find(g => g.id == currentGoalId);
+                const goal = goals.find(g => g.id === currentGoalId);
                 if (!goal) return;
 
                 let value = parseFloat(elements.currentAmountInput.value);
@@ -797,6 +1033,11 @@ System: range" id="currentAmountSlider" min="0" max="10000" value="0" class="inp
         function setupEventListeners() {
             elements.goalCategorySelect.addEventListener('change', () => updateCategoryFields(elements.goalCategorySelect.value));
 
+            elements.notificationInterval.addEventListener('change', () => {
+                elements.customInterval.classList.toggle('hidden', elements.notificationInterval.value !== 'custom');
+                elements.customInterval.toggleAttribute('required', elements.notificationInterval.value === 'custom');
+            });
+
             elements.tabBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
                     elements.tabBtns.forEach(b => {
@@ -810,6 +1051,7 @@ System: range" id="currentAmountSlider" min="0" max="10000" value="0" class="inp
                     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
                     document.getElementById(btn.dataset.tab).classList.add('active');
                     if (btn.dataset.tab === 'analytics') updateCharts();
+                    if (btn.dataset.tab === 'notifications') renderNotifications();
                 });
             });
 
@@ -823,7 +1065,6 @@ System: range" id="currentAmountSlider" min="0" max="10000" value="0" class="inp
                 e.preventDefault();
                 let hasError = false;
 
-                // Reset error messages
                 elements.goalTitleError.style.display = 'none';
                 elements.goalCategoryError.style.display = 'none';
                 elements.targetAmountError.style.display = 'none';
@@ -840,7 +1081,7 @@ System: range" id="currentAmountSlider" min="0" max="10000" value="0" class="inp
                     hasError = true;
                 }
 
-                const targetAmount = category === 'finance' ? parseFloat(elements.targetAmountInput.value) : null;
+                const targetAmount = parseFloat(elements.targetAmountInput.value);
                 if (category === 'finance' && (!targetAmount || targetAmount <= 0)) {
                     elements.targetAmountError.style.display = 'block';
                     hasError = true;
@@ -849,33 +1090,32 @@ System: range" id="currentAmountSlider" min="0" max="10000" value="0" class="inp
                 if (hasError) return;
 
                 const description = elements.goalDescription.value.trim();
+                const id = elements.editGoalId.value ? parseInt(elements.editGoalId.value) : (goals.length > 0 ? Math.max(...goals.map(g => g.id)) + 1 : 1);
+
+                const goal = {
+                    id,
+                    title,
+                    description,
+                    category,
+                    progress: 0,
+                    milestones: elements.editGoalId.value ? (goals.find(g => g.id === id)?.milestones || []) : [],
+                    targetAmount: category === 'finance' ? targetAmount : null,
+                    currentAmount: category === 'finance' ? (elements.editGoalId.value ? goals.find(g => g.id === id)?.currentAmount || 0 : 0) : null
+                };
 
                 if (elements.editGoalId.value) {
-                    const goal = goals.find(g => g.id == elements.editGoalId.value);
-                    if (!goal) return;
-
-                    Object.assign(goal, {
-                        title, description, category,
-                        targetAmount: category === 'finance' ? targetAmount : null,
-                        currentAmount: category === 'finance' ? Math.min(goal.currentAmount || 0, targetAmount) : null,
-                        milestones: category === 'finance' ? [] : goal.milestones || []
-                    });
-                    updateGoalProgress(goal);
+                    const index = goals.findIndex(g => g.id === id);
+                    goals[index] = goal;
                 } else {
-                    goals.push({
-                        id: goals.length > 0 ? Math.max(...goals.map(g => g.id)) + 1 : 1,
-                        title, description, category, progress: 0,
-                        milestones: category === 'finance' ? [] : [],
-                        targetAmount: category === 'finance' ? targetAmount : null,
-                        currentAmount: category === 'finance' ? 0 : null
-                    });
+                    goals.push(goal);
                 }
 
-                renderGoals();
-                closeGoalModal();
-                updateNoGoalsMessage();
-                updateCharts();
+                updateGoalProgress(goal);
                 saveGoals();
+                renderGoals();
+                updateCharts();
+                updateNotificationGoalOptions();
+                closeGoalModal();
             });
 
             elements.addMilestoneBtn.addEventListener('click', () => {
@@ -885,31 +1125,90 @@ System: range" id="currentAmountSlider" min="0" max="10000" value="0" class="inp
                     return;
                 }
 
-                const goal = goals.find(g => g.id == currentGoalId);
+                const goal = goals.find(g => g.id === currentGoalId);
                 if (!goal) return;
 
                 goal.milestones.push({
                     id: goal.milestones.length > 0 ? Math.max(...goal.milestones.map(m => m.id)) + 1 : 1,
-                    text, completed: false
+                    text,
+                    completed: false
                 });
 
-                openGoalDetail(currentGoalId);
-                elements.newMilestoneInput.value = '';
                 updateGoalProgress(goal);
+                saveGoals();
+                updateGoalDetailModal(goal);
                 renderGoals();
                 updateCharts();
-                saveGoals();
+                elements.newMilestoneInput.value = '';
             });
 
             elements.deleteGoalBtn.addEventListener('click', () => {
                 if (confirm('Are you sure you want to delete this goal?')) {
-                    goals = goals.filter(g => g.id != currentGoalId);
+                    notifications = notifications.filter(n => n.goalId !== currentGoalId);
+                    notifications.forEach(n => { if (n.timer) clearInterval(n.timer); });
+                    saveNotifications();
+                    goals = goals.filter(g => g.id !== currentGoalId);
+                    database.ref('goals/' + currentGoalId).remove().catch(error => {
+                        console.error('Error deleting goal:', error);
+                        alert('Failed to delete goal');
+                    });
                     closeGoalDetailModal();
                     renderGoals();
-                    updateNoGoalsMessage();
                     updateCharts();
-                    saveGoals();
+                    updateNotificationGoalOptions();
+                    renderNotifications();
                 }
+            });
+
+            elements.createNotificationBtn.addEventListener('click', () => {
+                let hasError = false;
+                elements.notificationGoalError.style.display = 'none';
+                elements.notificationMessageError.style.display = 'none';
+                elements.customIntervalError.style.display = 'none';
+
+                const goalId = parseInt(elements.notificationGoal.value);
+                const message = elements.notificationMessage.value.trim();
+                let interval = parseInt(elements.notificationInterval.value);
+
+                if (!goalId) {
+                    elements.notificationGoalError.style.display = 'block';
+                    hasError = true;
+                }
+
+                if (!message) {
+                    elements.notificationMessageError.style.display = 'block';
+                    hasError = true;
+                }
+
+                if (elements.notificationInterval.value === 'custom') {
+                    const customHours = parseFloat(elements.customInterval.value);
+                    if (!customHours || customHours <= 0) {
+                        elements.customIntervalError.style.display = 'block';
+                        hasError = true;
+                    } else {
+                        interval = customHours * 3600000; // Convert hours to milliseconds
+                    }
+                }
+
+                if (hasError) return;
+
+                const notification = {
+                    id: notifications.length > 0 ? Math.max(...notifications.map(n => n.id)) + 1 : 1,
+                    goalId,
+                    message,
+                    interval
+                };
+
+                notifications.push(notification);
+                scheduleNotification(notification);
+                saveNotifications();
+                renderNotifications();
+                elements.notificationGoal.value = '';
+                elements.notificationMessage.value = '';
+                elements.notificationInterval.value = '7200000';
+                elements.customInterval.value = '';
+                elements.customInterval.classList.add('hidden');
+                alert('Notification created!');
             });
 
             elements.exportGoalsBtn.addEventListener('click', exportGoals);
@@ -917,18 +1216,6 @@ System: range" id="currentAmountSlider" min="0" max="10000" value="0" class="inp
 
             setupSliderInputListeners();
 
-            elements.goalsContainer.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                const afterElement = getDragAfterElement(elements.goalsContainer, e.clientY);
-                const draggable = document.querySelector('.dragging');
-                if (afterElement == null) {
-                    elements.goalsContainer.insertBefore(draggable, document.getElementById('addMoreGoalsBtn')?.parentElement || null);
-                } else {
-                    elements.goalsContainer.insertBefore(draggable, afterElement);
-                }
-            });
-
-            // Keyboard navigation for modals
             elements.goalModal.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') closeGoalModal();
             });
@@ -938,26 +1225,27 @@ System: range" id="currentAmountSlider" min="0" max="10000" value="0" class="inp
             });
         }
 
-        function getDragAfterElement(container, y) {
-            const draggableElements = [...container.querySelectorAll('.goal-card:not(.dragging)')];
-            return draggableElements.reduce((closest, child) => {
-                const box = child.getBoundingClientRect();
-                const offset = y - box.top - box.height / 2;
-                return offset < 0 && offset > closest.offset ? { offset, element: child } : closest;
-            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        // Initialize Application
+        function initializeApp() {
+            requestNotificationPermission();
+            loadGoalsFromServer();
+            loadNotificationsFromServer();
+            setupEventListeners();
+            initializeCharts();
         }
 
-        // Initialize
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => console.log('Service Worker registered:', registration))
+                    .catch(error => console.error('Service Worker registration failed:', error));
+            });
+        }
+
+        // Initialize Firebase and App
         document.addEventListener('DOMContentLoaded', () => {
-            if (!elements.completionChart || !elements.categoryChart) {
-                console.error('Canvas elements for charts not found');
-                return;
-            }
-            loadGoals();
-            renderGoals();
-            setupEventListeners();
-            updateNoGoalsMessage();
-            initializeCharts();
+            initializeApp();
         });
     </script>
 </body>
