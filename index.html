@@ -184,22 +184,8 @@
         }
 
         @media (max-width: 768px) {
-            .nav-tabs {
-                display: none; /* Hide horizontal tabs on mobile */
-            }
-
-            #mobileMenu.active {
-                display: block; /* Show mobile menu when active */
-            }
-
             .tab-btn {
                 font-size: 0.875rem; /* Smaller font size on mobile */
-            }
-        }
-
-        @media (min-width: 768px) {
-            #menuToggle, #mobileMenu {
-                display: none; /* Hide hamburger menu on larger screens */
             }
         }
     </style>
@@ -217,25 +203,11 @@
         </header>
 
         <nav class="mb-8 border-b" style="border-color: #4b5563;">
-            <div class="flex justify-between items-center">
-                <ul class="nav-tabs flex space-x-4 sm:space-x-8 overflow-x-auto md:overflow-visible">
-                    <li><button class="tab-btn active py-2 px-1 border-b-2 border-blue-400 text-blue-400 text-sm sm:text-base" data-tab="dashboard" aria-selected="true">Dashboard</button></li>
-                    <li><button class="tab-btn py-2 px-1 hover:text-blue-400 text-sm sm:text-base" data-tab="analytics" aria-selected="false">Analytics</button></li>
-                    <li><button class="tab-btn py-2 px-1 hover:text-blue-400 text-sm sm:text-base" data-tab="settings" aria-selected="false">Settings</button></li>
-                </ul>
-                <button id="menuToggle" class="md:hidden text-gray-200 focus:outline-none">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                </button>
-            </div>
-            <div id="mobileMenu" class="hidden md:hidden bg-gray-800 rounded-b-lg">
-                <ul class="flex flex-col space-y-2 p-4">
-                    <li><button class="tab-btn w-full text-left py-2 px-1 hover:text-blue-400 text-sm" data-tab="dashboard" aria-selected="true">Dashboard</button></li>
-                    <li><button class="tab-btn w-full text-left py-2 px-1 hover:text-blue-400 text-sm" data-tab="analytics" aria-selected="false">Analytics</button></li>
-                    <li><button class="tab-btn w-full text-left py-2 px-1 hover:text-blue-400 text-sm" data-tab="settings" aria-selected="false">Settings</button></li>
-                </ul>
-            </div>
+            <ul class="nav-tabs flex space-x-4 sm:space-x-8 overflow-x-auto md:overflow-visible">
+                <li><button class="tab-btn active py-2 px-1 border-b-2 border-blue-400 text-blue-400 text-sm sm:text-base" data-tab="dashboard" aria-selected="true">Dashboard</button></li>
+                <li><button class="tab-btn py-2 px-1 hover:text-blue-400 text-sm sm:text-base" data-tab="analytics" aria-selected="false">Analytics</button></li>
+                <li><button class="tab-btn py-2 px-1 hover:text-blue-400 text-sm sm:text-base" data-tab="settings" aria-selected="false">Settings</button></li>
+            </ul>
         </nav>
 
         <div id="dashboard" class="tab-content active">
@@ -508,9 +480,7 @@
             notificationGoalError: document.getElementById('notificationGoalError'),
             notificationMessageError: document.getElementById('notificationMessageError'),
             customIntervalError: document.getElementById('customIntervalError'),
-            loadingSpinner: document.getElementById('loadingSpinner'),
-            menuToggle: document.getElementById('menuToggle'),
-            mobileMenu: document.getElementById('mobileMenu')
+            loadingSpinner: document.getElementById('loadingSpinner')
         };
 
         let goals = [];
@@ -538,14 +508,34 @@
             }[category] || 'bg-gray-900 text-gray-300';
         };
 
+        // Debounce Function
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
         // Notification Functions
         function requestNotificationPermission() {
-            if ('Notification' in window && Notification.permission !== 'granted') {
+            if ('Notification' in window) {
                 Notification.requestPermission().then(permission => {
                     if (permission !== 'granted') {
+                        console.warn('Notification permission denied. Using alerts instead.');
                         alert('Notifications are disabled. You will receive alerts instead.');
                     }
+                }).catch(error => {
+                    console.error('Error requesting notification permission:', error);
+                    alert('Failed to request notification permission. Using alerts instead.');
                 });
+            } else {
+                console.warn('Notifications not supported in this browser');
+                alert('Notifications are not supported in this browser. Using alerts instead.');
             }
         }
 
@@ -810,6 +800,10 @@
             });
 
             goalCard.addEventListener('dragstart', (e) => {
+                if (!e.dataTransfer) {
+                    console.warn('Drag-and-drop not supported in this browser');
+                    return;
+                }
                 goalCard.classList.add('dragging');
                 e.dataTransfer.setData('text/plain', goal.id);
             });
@@ -923,8 +917,14 @@
 
         // Chart Functions
         function initializeCharts() {
-            if (!elements.completionChart || !elements.categoryChart || !window.Chart) {
-                console.error('Cannot initialize charts: Canvas elements or Chart.js not found');
+            if (!window.Chart) {
+                console.error('Chart.js is not loaded');
+                alert('Failed to load charts. Please check your internet connection and try again.');
+                return;
+            }
+
+            if (!elements.completionChart || !elements.categoryChart) {
+                console.error('Cannot initialize charts: Canvas elements not found');
                 return;
             }
 
@@ -1010,12 +1010,23 @@
                 try {
                     const importedGoals = JSON.parse(e.target.result);
                     if (!Array.isArray(importedGoals)) throw new Error('Invalid file format');
+
+                    // Validate goal structure
+                    importedGoals.forEach(goal => {
+                        if (!goal.title || !goal.category) {
+                            throw new Error('Invalid goal data: Missing title or category');
+                        }
+                        if (goal.category === 'finance' && (!goal.targetAmount || goal.targetAmount <= 0)) {
+                            throw new Error('Invalid goal data: Finance goals require a valid target amount');
+                        }
+                    });
+
                     database.ref('goals').remove().then(() => {
                         goals = [];
                         importedGoals.forEach(goal => {
                             const newGoal = {
                                 ...goal,
-                                id: goals.length > 0 ? Math.max(...goals.map(g => g.id)) + 1 : 1,
+                                id: Date.now() + Math.random(), // Use timestamp + random for unique ID
                                 milestones: goal.milestones || []
                             };
                             goals.push(newGoal);
@@ -1039,7 +1050,7 @@
 
         // Slider and Input Handlers
         function setupSliderInputListeners() {
-            elements.currentAmountSlider.addEventListener('input', () => {
+            elements.currentAmountSlider.addEventListener('input', debounce(() => {
                 const goal = goals.find(g => g.id === currentGoalId);
                 if (!goal) return;
 
@@ -1050,9 +1061,9 @@
                 renderGoals();
                 updateCharts();
                 saveGoals();
-            });
+            }, 500));
 
-            elements.currentAmountInput.addEventListener('input', () => {
+            elements.currentAmountInput.addEventListener('input', debounce(() => {
                 const goal = goals.find(g => g.id === currentGoalId);
                 if (!goal) return;
 
@@ -1067,7 +1078,7 @@
                 renderGoals();
                 updateCharts();
                 saveGoals();
-            });
+            }, 500));
         }
 
         // Event Listeners
@@ -1093,14 +1104,7 @@
                     document.getElementById(btn.dataset.tab).classList.add('active');
                     if (btn.dataset.tab === 'analytics') updateCharts();
                     if (btn.dataset.tab === 'settings') renderNotifications();
-                    elements.mobileMenu.classList.add('hidden');
-                    elements.mobileMenu.classList.remove('active');
                 });
-            });
-
-            elements.menuToggle.addEventListener('click', () => {
-                elements.mobileMenu.classList.toggle('hidden');
-                elements.mobileMenu.classList.toggle('active');
             });
 
             elements.createFirstGoalBtn.addEventListener('click', openGoalModal);
@@ -1138,7 +1142,7 @@
                 if (hasError) return;
 
                 const description = elements.goalDescription.value.trim();
-                const id = elements.editGoalId.value ? parseInt(elements.editGoalId.value) : (goals.length > 0 ? Math.max(...goals.map(g => g.id)) + 1 : 1);
+                const id = elements.editGoalId.value ? parseInt(elements.editGoalId.value) : Date.now() + Math.random();
 
                 const goal = {
                     id,
