@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#3b82f6">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Dreamit Goal Tracker</title>
+    <title>Dreamit - Goal Tracker</title>
     <link rel="manifest" href="/site.webmanifest">
     <link rel="apple-touch-icon" href="/navbarlogo.png">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -298,10 +298,10 @@
                         <label for="goalCategory" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Category</label>
                         <select id="goalCategory" class="select-field" required aria-describedby="goalCategoryError">
                             <option value="">Select Category</option>
-                            <option value="health">Health</option>
-                            <option value="career">Career</option>
-                            <option value="finance">Finance</option>
-                            <option value="personal">Personal Growth</option>
+                            <option value="health">🏋️Health</option>
+                            <option value="career">💰Career</option>
+                            <option value="finance">💼Finance</option>
+                            <option value="personal">🚀Personal Growth</option>
                         </select>
                         <p id="goalCategoryError" class="error-message">Please select a category</p>
                     </div>
@@ -485,7 +485,6 @@
         }[category] || 'bg-gray-900 text-gray-300');
 
         function sanitizeGoal(goal) {
-            // Ensure the ID is a valid Firebase key (no .,#,$,/,[,])
             const validId = goal.id && !/[.#$/\[\]]/.test(goal.id) ? goal.id : database.ref('goals').push().key;
             return {
                 id: validId,
@@ -499,7 +498,8 @@
                     completed: !!m.completed
                 })) : [],
                 targetAmount: goal.category === 'finance' ? Number(goal.targetAmount) || null : null,
-                currentAmount: goal.category === 'finance' ? Number(goal.currentAmount) || 0 : null
+                currentAmount: goal.category === 'finance' ? Number(goal.currentAmount) || 0 : null,
+                order: Number(goal.order) || 0
             };
         }
 
@@ -596,8 +596,8 @@
                 return Promise.reject(new Error('Database not initialized'));
             }
             const updates = {};
-            goals.forEach(goal => {
-                const sanitizedGoal = sanitizeGoal(goal);
+            goals.forEach((goal, index) => {
+                const sanitizedGoal = sanitizeGoal({ ...goal, order: index });
                 updates['goals/' + sanitizedGoal.id] = sanitizedGoal;
             });
             console.log('Saving goals to Firebase:', updates);
@@ -642,9 +642,11 @@
                 snapshot.forEach(childSnapshot => {
                     const goal = childSnapshot.val();
                     goal.milestones = goal.milestones || [];
+                    goal.order = Number(goal.order) || 0;
                     updateGoalProgress(goal);
                     goals.push(goal);
                 });
+                goals.sort((a, b) => a.order - b.order);
                 renderGoals();
                 updateCharts();
                 updateNotificationGoalOptions();
@@ -820,6 +822,7 @@
                     const droppedIndex = goals.indexOf(droppedGoal);
                     goals.splice(draggedIndex, 1);
                     goals.splice(droppedIndex, 0, draggedGoal);
+                    goals.forEach((g, index) => g.order = index);
                     renderGoals();
                     saveGoals();
                 });
@@ -833,6 +836,7 @@
 
         function renderGoals() {
             elements.goalsContainer.innerHTML = '';
+            goals.sort((a, b) => a.order - b.order);
             goals.forEach(goal => elements.goalsContainer.appendChild(renderGoalCard(goal)));
             if (goals.length > 0) {
                 const addMoreCard = document.createElement('div');
@@ -998,10 +1002,11 @@
                     });
                     database.ref('goals').remove().then(() => {
                         goals = [];
-                        importedGoals.forEach(goal => {
+                        importedGoals.forEach((goal, index) => {
                             const newGoal = sanitizeGoal({
                                 ...goal,
-                                id: database.ref('goals').push().key
+                                id: database.ref('goals').push().key,
+                                order: index
                             });
                             goals.push(newGoal);
                             database.ref('goals/' + newGoal.id).set(newGoal);
@@ -1113,7 +1118,8 @@
                     progress: 0,
                     milestones: elements.editGoalId.value ? (goals.find(g => g.id === id)?.milestones || []) : [],
                     targetAmount: category === 'finance' ? targetAmount : null,
-                    currentAmount: category === 'finance' ? (elements.editGoalId.value ? goals.find(g => g.id === id)?.currentAmount || 0 : 0) : null
+                    currentAmount: category === 'finance' ? (elements.editGoalId.value ? goals.find(g => g.id === id)?.currentAmount || 0 : 0) : null,
+                    order: elements.editGoalId.value ? (goals.find(g => g.id === id)?.order || 0) : goals.length
                 };
                 try {
                     if (elements.editGoalId.value) {
@@ -1122,6 +1128,7 @@
                     } else {
                         goals.push(sanitizeGoal(goal));
                     }
+                    goals.forEach((g, index) => g.order = index);
                     updateGoalProgress(goal);
                     await saveGoals();
                     renderGoals();
@@ -1160,6 +1167,7 @@
                     notifications.forEach(n => { if (n.timer) clearInterval(n.timer); });
                     saveNotifications();
                     goals = goals.filter(g => g.id !== currentGoalId);
+                    goals.forEach((g, index) => g.order = index);
                     database.ref('goals/' + currentGoalId).remove().catch(error => {
                         console.error('Error deleting goal:', error);
                         alert(`Failed to delete goal: ${error.message}`);
