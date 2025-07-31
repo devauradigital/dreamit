@@ -7,13 +7,10 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Dreamit - Goal Tracker</title>
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="manifest" href="site.webmanifest">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="apple-touch-icon" href="/navbarlogo.png">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
@@ -183,9 +180,18 @@
             display: none;
         }
 
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-height: 300px;
+        }
+
         @media (max-width: 768px) {
             .tab-btn {
                 font-size: 0.875rem;
+            }
+            .chart-container {
+                max-height: 250px;
             }
         }
     </style>
@@ -224,45 +230,44 @@
         </div>
 
         <div id="analytics" class="tab-content">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="card p-6 rounded-xl">
                     <h3 class="text-lg font-semibold mb-4" style="color: #e5e7eb;">Goal Completion Rates</h3>
-                    <canvas id="completionChart" height="250"></canvas>
+                    <div class="chart-container">
+                        <canvas id="completionChart" aria-label="Goal Completion Rates Bar Chart"></canvas>
+                    </div>
                 </div>
                 <div class="card p-6 rounded-xl">
                     <h3 class="text-lg font-semibold mb-4" style="color: #e5e7eb;">Goal Categories Distribution</h3>
-                    <canvas id="categoryChart" height="250"></canvas>
+                    <div class="chart-container">
+                        <canvas id="categoryChart" aria-label="Goal Categories Distribution Pie Chart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div id="settings" class="tab-content">
             <div class="card p-6 rounded-xl mb-6">
-                <h3 class="text-lg font-semibold mb-4" style="color: #e5e7eb;">Notifications</h3>
+                <h3 class="text-lg font-semibold mb-4" style="color: #e5e7eb;">Reminders</h3>
                 <div class="mb-4">
-                    <label for="notificationGoal" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Select Goal</label>
-                    <select id="notificationGoal" class="select-field" aria-describedby="notificationGoalError">
+                    <label for="reminderGoal" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Select Goal</label>
+                    <select id="reminderGoal" class="select-field" aria-describedby="reminderGoalError">
                         <option value="">Select a Goal</option>
                     </select>
-                    <p id="notificationGoalError" class="error-message">Please select a goal</p>
+                    <p id="reminderGoalError" class="error-message">Please select a goal</p>
                 </div>
                 <div class="mb-4">
-                    <label for="notificationMessage" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Notification Message</label>
-                    <input type="text" id="notificationMessage" class="input-field" placeholder="Enter notification message" aria-describedby="notificationMessageError">
-                    <p id="notificationMessageError" class="error-message">Please enter a notification message</p>
+                    <label for="reminderMessage" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Reminder Message</label>
+                    <input type="text" id="reminderMessage" class="input-field" placeholder="Enter reminder message" aria-describedby="reminderMessageError">
+                    <p id="reminderMessageError" class="error-message">Please enter a reminder message</p>
                 </div>
                 <div class="mb-4">
-                    <label for="notificationInterval" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Notification Interval</label>
-                    <select id="notificationInterval" class="select-field">
-                        <option value="7200000">Every 2 Hours</option>
-                        <option value="10800000">Every 3 Hours</option>
-                        <option value="custom">Custom (in hours)</option>
-                    </select>
-                    <input type="number" id="customInterval" class="input-field mt-2 hidden" placeholder="Enter hours (e.g., 4)" min="1" step="1" aria-describedby="customIntervalError">
-                    <p id="customIntervalError" class="error-message">Please enter a valid number of hours</p>
+                    <label for="reminderTime" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Reminder Time (24-hour format, device local time)</label>
+                    <input type="time" id="reminderTime" class="input-field" aria-describedby="reminderTimeError">
+                    <p id="reminderTimeError" class="error-message">Please select a valid time</p>
                 </div>
-                <button id="createNotificationBtn" class="btn btn-primary">Create Notification</button>
-                <div id="notificationsList" class="mt-4 space-y-2"></div>
+                <button id="createReminderBtn" class="btn btn-primary">Create Reminder</button>
+                <div id="remindersList" class="mt-4 space-y-2"></div>
             </div>
             <div class="card p-6 rounded-xl">
                 <h3 class="text-lg font-semibold mb-4" style="color: #e5e7eb;">Export/Import Goals</h3>
@@ -450,26 +455,24 @@
             milestonesList: document.getElementById('milestonesList'),
             completionChart: document.getElementById('completionChart'),
             categoryChart: document.getElementById('categoryChart'),
-            financeProgressText: document.getElementById('financeProgressText'),
             exportGoalsBtn: document.getElementById('exportGoalsBtn'),
             importGoalsInput: document.getElementById('importGoalsInput'),
             goalTitleError: document.getElementById('goalTitleError'),
             goalCategoryError: document.getElementById('goalCategoryError'),
             targetAmountError: document.getElementById('targetAmountError'),
-            notificationGoal: document.getElementById('notificationGoal'),
-            notificationMessage: document.getElementById('notificationMessage'),
-            notificationInterval: document.getElementById('notificationInterval'),
-            customInterval: document.getElementById('customInterval'),
-            createNotificationBtn: document.getElementById('createNotificationBtn'),
-            notificationsList: document.getElementById('notificationsList'),
-            notificationGoalError: document.getElementById('notificationGoalError'),
-            notificationMessageError: document.getElementById('notificationMessageError'),
-            customIntervalError: document.getElementById('customIntervalError'),
+            reminderGoal: document.getElementById('reminderGoal'),
+            reminderMessage: document.getElementById('reminderMessage'),
+            reminderTime: document.getElementById('reminderTime'),
+            createReminderBtn: document.getElementById('createReminderBtn'),
+            remindersList: document.getElementById('remindersList'),
+            reminderGoalError: document.getElementById('reminderGoalError'),
+            reminderMessageError: document.getElementById('reminderMessageError'),
+            reminderTimeError: document.getElementById('reminderTimeError'),
             loadingSpinner: document.getElementById('loadingSpinner')
         };
 
         let goals = [];
-        let notifications = [];
+        let reminders = [];
         let currentGoalId = null;
         let completionChart, categoryChart;
 
@@ -502,7 +505,9 @@
                 })) : [],
                 targetAmount: goal.category === 'finance' ? Number(goal.targetAmount) || null : null,
                 currentAmount: goal.category === 'finance' ? Number(goal.currentAmount) || 0 : null,
-                order: Number(goal.order) || 0
+                order: Number(goal.order) || 0,
+                createdAt: goal.createdAt || new Date().toISOString(),
+                progressHistory: goal.progressHistory || []
             };
         }
 
@@ -535,59 +540,74 @@
             }
         }
 
-        function showNotification(message, goalId) {
+        function showReminder(message, goalId) {
             const goal = goals.find(g => g.id === goalId);
             if (!goal) return;
-            const notificationMessage = `${message} (Goal: ${goal.title}, Progress: ${goal.progress}%)`;
+            const reminderMessage = `${message} (Goal: ${goal.title}, Progress: ${goal.progress}%)`;
             if ('Notification' in window && Notification.permission === 'granted') {
                 new Notification('Goal Tracker Reminder', {
-                    body: notificationMessage,
+                    body: reminderMessage,
                     icon: '/navbarlogo.png'
                 });
             } else {
-                alert(notificationMessage);
+                alert(reminderMessage);
             }
         }
 
-        function scheduleNotification(notification) {
-            if (notification.interval <= 0) return;
-            notification.timer = setInterval(() => {
-                showNotification(notification.message, notification.goalId);
-            }, notification.interval);
+        function scheduleReminder(reminder) {
+            const now = new Date();
+            const [hour, minute] = reminder.time.split(':').map(Number);
+            let reminderTime = new Date();
+            reminderTime.setHours(hour, minute, 0, 0);
+            
+            if (reminderTime <= now) {
+                reminderTime.setDate(reminderTime.getDate() + 1);
+            }
+            
+            const msUntilReminder = reminderTime - now;
+            
+            reminder.timer = setTimeout(() => {
+                showReminder(reminder.message, reminder.goalId);
+                // Schedule for next day
+                reminder.intervalTimer = setInterval(() => {
+                    showReminder(reminder.message, reminder.goalId);
+                }, 24 * 60 * 60 * 1000);
+            }, msUntilReminder);
         }
 
-        function renderNotifications() {
-            elements.notificationsList.innerHTML = '';
-            notifications.forEach(notification => {
-                const goal = goals.find(g => g.id === notification.goalId);
+        function renderReminders() {
+            elements.remindersList.innerHTML = '';
+            reminders.forEach(reminder => {
+                const goal = goals.find(g => g.id === reminder.goalId);
                 if (!goal) return;
-                const notificationItem = document.createElement('div');
-                notificationItem.className = 'flex items-center justify-between';
-                notificationItem.innerHTML = `
+                const reminderItem = document.createElement('div');
+                reminderItem.className = 'flex items-center justify-between';
+                reminderItem.innerHTML = `
                     <div>
-                        <p class="text-sm" style="color: #e5e7eb;">${notification.message}</p>
-                        <p class="text-sm" style="color: #9ca3af;">Goal: ${goal.title} | Every ${notification.interval / 3600000} hours</p>
+                        <p class="text-sm" style="color: #e5e7eb;">${reminder.message}</p>
+                        <p class="text-sm" style="color: #9ca3af;">Goal: ${goal.title} | Time: ${reminder.time}</p>
                     </div>
-                    <button class="delete-notification-btn text-red-400" data-id="${notification.id}" aria-label="Delete notification">
+                    <button class="delete-reminder-btn text-red-400" data-id="${reminder.id}" aria-label="Delete reminder">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 `;
-                elements.notificationsList.appendChild(notificationItem);
+                elements.remindersList.appendChild(reminderItem);
             });
 
-            document.querySelectorAll('.delete-notification-btn').forEach(btn => {
+            document.querySelectorAll('.delete-reminder-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const id = parseInt(btn.dataset.id);
-                    const notification = notifications.find(n => n.id === id);
-                    if (notification.timer) clearInterval(notification.timer);
-                    notifications = notifications.filter(n => n.id !== id);
-                    database.ref('notifications/' + id).remove().catch(error => {
-                        console.error('Error removing notification:', error);
-                        alert(`Failed to remove notification: ${error.message}`);
+                    const reminder = reminders.find(n => n.id === id);
+                    if (reminder.timer) clearTimeout(reminder.timer);
+                    if (reminder.intervalTimer) clearInterval(reminder.intervalTimer);
+                    reminders = reminders.filter(n => n.id !== id);
+                    database.ref('reminders/' + id).remove().catch(error => {
+                        console.error('Error removing reminder:', error);
+                        alert(`Failed to remove reminder: ${error.message}`);
                     });
-                    renderNotifications();
+                    renderReminders();
                 });
             });
         }
@@ -603,7 +623,6 @@
                 const sanitizedGoal = sanitizeGoal({ ...goal, order: index });
                 updates['goals/' + sanitizedGoal.id] = sanitizedGoal;
             });
-            console.log('Saving goals to Firebase:', updates);
             return database.ref().update(updates).catch(error => {
                 console.error('Error saving goals:', error.code, error.message);
                 let userMessage = 'Failed to save goals. ';
@@ -619,14 +638,14 @@
             });
         }
 
-        function saveNotifications() {
+        function saveReminders() {
             const updates = {};
-            notifications.forEach(notification => {
-                updates['notifications/' + notification.id] = notification;
+            reminders.forEach(reminder => {
+                updates['reminders/' + reminder.id] = reminder;
             });
             return database.ref().update(updates).catch(error => {
-                console.error('Error saving notifications:', error);
-                alert(`Failed to save notifications: ${error.message}`);
+                console.error('Error saving reminders:', error);
+                alert(`Failed to save reminders: ${error.message}`);
             });
         }
 
@@ -646,13 +665,14 @@
                     const goal = childSnapshot.val();
                     goal.milestones = goal.milestones || [];
                     goal.order = Number(goal.order) || 0;
+                    goal.progressHistory = goal.progressHistory || [];
                     updateGoalProgress(goal);
                     goals.push(goal);
                 });
                 goals.sort((a, b) => a.order - b.order);
                 renderGoals();
                 updateCharts();
-                updateNotificationGoalOptions();
+                updateReminderGoalOptions();
                 elements.loadingSpinner.classList.add('hidden');
             }).catch(error => {
                 console.error('Error loading goals:', error.code, error.message);
@@ -662,20 +682,23 @@
             });
         }
 
-        function loadNotificationsFromServer() {
+        function loadRemindersFromServer() {
             if (!database) return;
-            database.ref('notifications').once('value').then(snapshot => {
-                notifications.forEach(n => { if (n.timer) clearInterval(n.timer); });
-                notifications = [];
-                snapshot.forEach(childSnapshot => {
-                    const notification = childSnapshot.val();
-                    notifications.push(notification);
-                    scheduleNotification(notification);
+            database.ref('reminders').once('value').then(snapshot => {
+                reminders.forEach(n => { 
+                    if (n.timer) clearTimeout(n.timer); 
+                    if (n.intervalTimer) clearInterval(n.intervalTimer);
                 });
-                renderNotifications();
+                reminders = [];
+                snapshot.forEach(childSnapshot => {
+                    const reminder = childSnapshot.val();
+                    reminders.push(reminder);
+                    scheduleReminder(reminder);
+                });
+                renderReminders();
             }).catch(error => {
-                console.error('Error loading notifications:', error);
-                alert(`Failed to load notifications: ${error.message}`);
+                console.error('Error loading reminders:', error);
+                alert(`Failed to load reminders: ${error.message}`);
             });
         }
 
@@ -684,13 +707,13 @@
             elements.targetAmountInput.toggleAttribute('required', category === 'finance');
         }
 
-        function updateNotificationGoalOptions() {
-            elements.notificationGoal.innerHTML = '<option value="">Select a Goal</option>';
+        function updateReminderGoalOptions() {
+            elements.reminderGoal.innerHTML = '<option value="">Select a Goal</option>';
             goals.forEach(goal => {
                 const option = document.createElement('option');
                 option.value = goal.id;
                 option.textContent = goal.title;
-                elements.notificationGoal.appendChild(option);
+                elements.reminderGoal.appendChild(option);
             });
         }
 
@@ -717,6 +740,11 @@
                 goal.progress = goal.milestones && goal.milestones.length ?
                     Math.round((goal.milestones.filter(m => m.completed).length / goal.milestones.length) * 100) : 0;
             }
+            goal.progressHistory = goal.progressHistory || [];
+            goal.progressHistory.push({
+                timestamp: new Date().toISOString(),
+                progress: goal.progress
+            });
             if (currentGoalId === goal.id) updateGoalDetailModal(goal);
             updateGoalCard(goal);
         }
@@ -917,6 +945,7 @@
             }
             if (!elements.completionChart || !elements.categoryChart) {
                 console.error('Cannot initialize charts: Canvas elements not found');
+                alert('Chart elements are missing. Please check the page structure.');
                 return;
             }
             completionChart = new Chart(elements.completionChart.getContext('2d'), {
@@ -932,42 +961,75 @@
                     }]
                 },
                 options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
                     scales: {
-                        y: { beginAtZero: true, ticks: { precision: 0, color: '#e5e7eb' }, grid: { color: '#4b5563' } },
-                        x: { ticks: { color: '#e5e7eb' }, grid: { color: '#4b5563' } }
+                        y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0, color: '#e5e7eb' },
+                            grid: { color: '#4b5563' }
+                        },
+                        x: {
+                            ticks: { color: '#e5e7eb' },
+                            grid: { color: '#4b5563' }
+                        }
                     },
-                    plugins: { legend: { labels: { color: '#e5e7eb' } } }
+                    plugins: {
+                        legend: { labels: { color: '#e5e7eb' } },
+                        title: { display: true, text: 'Goal Completion Status', color: '#e5e7eb' }
+                    }
                 }
             });
             categoryChart = new Chart(elements.categoryChart.getContext('2d'), {
-                type: 'doughnut',
+                type: 'pie',
                 data: {
-                    labels: ['Health', 'Career', 'Finance', 'Personal'],
+                    labels: ['Health', 'Career', 'Finance', 'Personal Growth'],
                     datasets: [{
                         data: [0, 0, 0, 0],
                         backgroundColor: [
-                            'rgba(59, 130, 246, 0.6)', 'rgba(239, 68, 68, 0.6)',
-                            'rgba(16, 185, 129, 0.6)', 'rgba(249, 115, 22, 0.6)'
+                            'rgba(59, 130, 246, 0.6)',
+                            'rgba(239, 68, 68, 0.6)',
+                            'rgba(16, 185, 129, 0.6)',
+                            'rgba(249, 115, 22, 0.6)'
                         ],
                         borderColor: [
-                            'rgba(59, 130, 246, 1)', 'rgba(239, 68, 68, 1)',
-                            'rgba(16, 185, 129, 1)', 'rgba(249, 115, 22, 1)'
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(239, 68, 68, 1)',
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(249, 115, 22, 1)'
                         ],
                         borderWidth: 1
                     }]
                 },
-                options: { plugins: { legend: { labels: { color: '#e5e7eb' } } } }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { color: '#e5e7eb' }
+                        },
+                        title: { display: true, text: 'Goal Categories Distribution', color: '#e5e7eb' }
+                    }
+                }
             });
             updateCharts();
         }
 
         function updateCharts() {
-            if (!completionChart || !categoryChart) return;
+            if (!completionChart || !categoryChart) {
+                console.warn('Charts not initialized, skipping update');
+                return;
+            }
+            
+            // Update completion chart
             const completed = goals.filter(g => g.progress === 100).length;
             const inProgress = goals.filter(g => g.progress > 0 && g.progress < 100).length;
             const notStarted = goals.filter(g => g.progress === 0).length;
             completionChart.data.datasets[0].data = [completed, inProgress, notStarted];
             completionChart.update();
+
+            // Update category chart
             const categories = { health: 0, career: 0, finance: 0, personal: 0 };
             goals.forEach(goal => categories[goal.category] && categories[goal.category]++);
             categoryChart.data.datasets[0].data = [
@@ -1017,7 +1079,7 @@
                         });
                         renderGoals();
                         updateCharts();
-                        updateNotificationGoalOptions();
+                        updateReminderGoalOptions();
                         alert('Goals imported successfully!');
                     }).catch(error => {
                         console.error('Error importing goals:', error);
@@ -1059,12 +1121,20 @@
             }, 500));
         }
 
+        function enforce24HourFormat() {
+            elements.reminderTime.addEventListener('input', () => {
+                const time = elements.reminderTime.value;
+                if (time) {
+                    const [hour, minute] = time.split(':').map(Number);
+                    if (!isNaN(hour) && !isNaN(minute)) {
+                        elements.reminderTime.value = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                    }
+                }
+            });
+        }
+
         function setupEventListeners() {
             elements.goalCategorySelect.addEventListener('change', () => updateCategoryFields(elements.goalCategorySelect.value));
-            elements.notificationInterval.addEventListener('change', () => {
-                elements.customInterval.classList.toggle('hidden', elements.notificationInterval.value !== 'custom');
-                elements.customInterval.toggleAttribute('required', elements.notificationInterval.value === 'custom');
-            });
             elements.tabBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
                     elements.tabBtns.forEach(b => {
@@ -1078,7 +1148,7 @@
                     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
                     document.getElementById(btn.dataset.tab).classList.add('active');
                     if (btn.dataset.tab === 'analytics') updateCharts();
-                    if (btn.dataset.tab === 'settings') renderNotifications();
+                    if (btn.dataset.tab === 'settings') renderReminders();
                 });
             });
             elements.createFirstGoalBtn.addEventListener('click', openGoalModal);
@@ -1122,7 +1192,9 @@
                     milestones: elements.editGoalId.value ? (goals.find(g => g.id === id)?.milestones || []) : [],
                     targetAmount: category === 'finance' ? targetAmount : null,
                     currentAmount: category === 'finance' ? (elements.editGoalId.value ? goals.find(g => g.id === id)?.currentAmount || 0 : 0) : null,
-                    order: elements.editGoalId.value ? (goals.find(g => g.id === id)?.order || 0) : goals.length
+                    order: elements.editGoalId.value ? (goals.find(g => g.id === id)?.order || 0) : goals.length,
+                    createdAt: elements.editGoalId.value ? (goals.find(g => g.id === id)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
+                    progressHistory: elements.editGoalId.value ? (goals.find(g => g.id === id)?.progressHistory || []) : []
                 };
                 try {
                     if (elements.editGoalId.value) {
@@ -1136,7 +1208,7 @@
                     await saveGoals();
                     renderGoals();
                     updateCharts();
-                    updateNotificationGoalOptions();
+                    updateReminderGoalOptions();
                     closeGoalModal();
                     alert(elements.editGoalId.value ? 'Goal updated successfully!' : 'Goal created successfully!');
                 } catch (error) {
@@ -1166,9 +1238,12 @@
             });
             elements.deleteGoalBtn.addEventListener('click', () => {
                 if (confirm('Are you sure you want to delete this goal?')) {
-                    notifications = notifications.filter(n => n.goalId !== currentGoalId);
-                    notifications.forEach(n => { if (n.timer) clearInterval(n.timer); });
-                    saveNotifications();
+                    reminders = reminders.filter(n => n.goalId !== currentGoalId);
+                    reminders.forEach(n => { 
+                        if (n.timer) clearTimeout(n.timer); 
+                        if (n.intervalTimer) clearInterval(n.intervalTimer);
+                    });
+                    saveReminders();
                     goals = goals.filter(g => g.id !== currentGoalId);
                     goals.forEach((g, index) => g.order = index);
                     database.ref('goals/' + currentGoalId).remove().catch(error => {
@@ -1178,52 +1253,56 @@
                     closeGoalDetailModal();
                     renderGoals();
                     updateCharts();
-                    updateNotificationGoalOptions();
-                    renderNotifications();
+                    updateReminderGoalOptions();
+                    renderReminders();
                 }
             });
-            elements.createNotificationBtn.addEventListener('click', () => {
+            elements.createReminderBtn.addEventListener('click', () => {
                 let hasError = false;
-                elements.notificationGoalError.style.display = 'none';
-                elements.notificationMessageError.style.display = 'none';
-                elements.customIntervalError.style.display = 'none';
-                const goalId = elements.notificationGoal.value;
-                const message = elements.notificationMessage.value.trim();
-                let interval = parseInt(elements.notificationInterval.value);
+                elements.reminderGoalError.style.display = 'none';
+                elements.reminderMessageError.style.display = 'none';
+                elements.reminderTimeError.style.display = 'none';
+                const goalId = elements.reminderGoal.value;
+                const message = elements.reminderMessage.value.trim();
+                const time = elements.reminderTime.value;
                 if (!goalId) {
-                    elements.notificationGoalError.style.display = 'block';
+                    elements.reminderGoalError.style.display = 'block';
                     hasError = true;
                 }
                 if (!message) {
-                    elements.notificationMessageError.style.display = 'block';
+                    elements.reminderMessageError.style.display = 'block';
                     hasError = true;
                 }
-                if (elements.notificationInterval.value === 'custom') {
-                    const customHours = parseFloat(elements.customInterval.value);
-                    if (!customHours || customHours <= 0) {
-                        elements.customIntervalError.style.display = 'block';
-                        hasError = true;
-                    } else {
-                        interval = customHours * 3600000;
-                    }
+                if (!time) {
+                    elements.reminderTimeError.textContent = 'Please select a valid time';
+                    elements.reminderTimeError.style.display = 'block';
+                    hasError = true;
                 }
-                if (hasError) return;
-                const notification = {
-                    id: notifications.length > 0 ? Math.max(...notifications.map(n => n.id)) + 1 : 1,
+                const [hour, minute] = time.split(':').map(Number);
+                if (isNaN(hour) || isNaN(minute)) {
+                    elements.reminderTimeError.textContent = 'Please select a valid time';
+                    elements.reminderTimeError.style.display = 'block';
+                    hasError = true;
+                }
+                if (hasError) {
+                    alert('Please fill in all required fields correctly.');
+                    return;
+                }
+                const formattedTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                const reminder = {
+                    id: reminders.length > 0 ? Math.max(...reminders.map(n => n.id)) + 1 : 1,
                     goalId,
                     message,
-                    interval
+                    time: formattedTime
                 };
-                notifications.push(notification);
-                scheduleNotification(notification);
-                saveNotifications();
-                renderNotifications();
-                elements.notificationGoal.value = '';
-                elements.notificationMessage.value = '';
-                elements.notificationInterval.value = '7200000';
-                elements.customInterval.value = '';
-                elements.customInterval.classList.add('hidden');
-                alert('Notification created!');
+                reminders.push(reminder);
+                scheduleReminder(reminder);
+                saveReminders();
+                renderReminders();
+                elements.reminderGoal.value = '';
+                elements.reminderMessage.value = '';
+                elements.reminderTime.value = '';
+                alert('Reminder created!');
             });
             elements.exportGoalsBtn.addEventListener('click', exportGoals);
             elements.importGoalsInput.addEventListener('change', importGoals);
@@ -1234,6 +1313,7 @@
                 if (e.key === 'Escape') closeGoalDetailModal();
             });
             setupSliderInputListeners();
+            enforce24HourFormat();
         }
 
         function initializeApp() {
@@ -1244,7 +1324,7 @@
             }
             requestNotificationPermission();
             loadGoalsFromServer();
-            loadNotificationsFromServer();
+            loadRemindersFromServer();
             setupEventListeners();
             initializeCharts();
         }
