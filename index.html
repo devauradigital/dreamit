@@ -173,7 +173,7 @@
                     <p class="text-xl text-gray-200 mt-2">Hi, Akshat <span class="wave-hand">👋</span></p>
                 </div>
             </div>
-            <p class="text-gray-300 mt-2">Your daily boost toward real progress.</p>
+            <p class="text-gray-300 mt-2">Your companion for reaching your goals</p>
         </header>
         <nav class="mb-8 border-b" style="border-color: #4b5563;">
             <ul class="nav-tabs flex space-x-4 sm:space-x-8 overflow-x-auto md:overflow-visible">
@@ -497,11 +497,24 @@
             createdAt: goal.createdAt || new Date().toISOString(),
             progressHistory: goal.progressHistory || []
         });
-        const showNotification = (title, message) => {
+        const showNotification = async (title, message) => {
             if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification(title, { body: message, icon: '/navbarlogo.png' });
+                try {
+                    await new Notification(title, { body: message, icon: '/navbarlogo.png' });
+                } catch (error) {
+                    console.error('Notification error:', error);
+                    alert(message); // Fallback to alert
+                }
+            } else if ('serviceWorker' in navigator && 'PushManager' in window) {
+                try {
+                    const registration = await navigator.serviceWorker.ready;
+                    await registration.showNotification(title, { body: message, icon: '/navbarlogo.png' });
+                } catch (error) {
+                    console.error('Service worker notification error:', error);
+                    alert(message); // Fallback to alert
+                }
             } else {
-                alert(message);
+                alert(message); // Fallback to alert
             }
         };
         const handleError = (error, action) => {
@@ -544,7 +557,10 @@
             if (!database) throw new Error('Database not initialized');
             const updates = {};
             data.forEach((item, index) => {
-                updates[`${path}/${item.id}`] = { ...item, order: index };
+                const sanitizedItem = { ...item };
+                delete sanitizedItem.timer; // Ensure client-side timers are not saved
+                delete sanitizedItem.intervalTimer;
+                updates[`${path}/${item.id}`] = { ...sanitizedItem, order: index };
             });
             await database.ref().update(updates).catch(error => handleError(error, `save ${path}`));
         };
@@ -574,12 +590,20 @@
             reminderTime.setHours(hour, minute, 0, 0);
             if (reminderTime <= now) reminderTime.setDate(reminderTime.getDate() + 1);
             const msUntilReminder = reminderTime - now;
+            if (reminder.timer) clearTimeout(reminder.timer);
+            if (reminder.intervalTimer) clearInterval(reminder.intervalTimer);
             reminder.timer = setTimeout(() => {
                 const goal = goals.find(g => g.id === reminder.goalId);
-                if (goal) showNotification('Goal Tracker Reminder', `${reminder.message} (Goal: ${goal.title}, Progress: ${goal.progress}%)`);
-                reminder.intervalTimer = setInterval(() => {
-                    if (goal) showNotification('Goal Tracker Reminder', `${reminder.message} (Goal: ${goal.title}, Progress: ${goal.progress}%)`);
-                }, 24 * 60 * 60 * 1000);
+                if (goal) {
+                    showNotification('Goal Tracker Reminder', `${reminder.message} (Goal: ${goal.title}, Progress: ${goal.progress}%)`);
+                    reminder.intervalTimer = setInterval(() => {
+                        if (goal) {
+                            showNotification('Goal Tracker Reminder', `${reminder.message} (Goal: ${goal.title}, Progress: ${goal.progress}%)`);
+                        }
+                    }, 24 * 60 * 60 * 1000);
+                } else {
+                    console.warn(`Skipping reminder ${reminder.id}: Goal ${reminder.goalId} not found`);
+                }
             }, msUntilReminder);
         };
         const updateReminderGoalOptions = (selectElement) => {
@@ -595,7 +619,15 @@
         const renderReminders = () => {
             if (!elements.remindersList) return;
             elements.remindersList.innerHTML = '';
-            reminders.forEach(reminder => {
+            const validReminders = reminders.filter(reminder => {
+                const goalExists = goals.some(g => g.id === reminder.goalId);
+                if (!goalExists) {
+                    console.warn(`Skipping reminder ${reminder.id}: Goal ${reminder.goalId} not found`);
+                    return false;
+                }
+                return true;
+            });
+            validReminders.forEach(reminder => {
                 const goal = goals.find(g => g.id === reminder.goalId);
                 if (!goal) return;
                 const reminderItem = document.createElement('div');
@@ -1135,8 +1167,11 @@
             if (elements.deleteGoalBtn) {
                 elements.deleteGoalBtn.addEventListener('click', async () => {
                     if (confirm('Are you sure you want to delete this goal?')) {
-                        reminders = reminders.filter(n => n.goalId !== currentGoalId).map((n, index) => ({ ...n, order: index }));
-                        reminders.forEach(n => { if (n.timer) clearTimeout(n.timer); if (n.intervalTimer) clearInterval(n.intervalTimer); });
+                        reminders = reminders.filter(n => n.goalId !== currentGoalId).map((n, index) => {
+                            if (n.timer) clearTimeout(n.timer);
+                            if (n.intervalTimer) clearInterval(n.intervalTimer);
+                            return { ...n, order: index };
+                        });
                         await saveData('reminders', reminders);
                         goals = goals.filter(g => g.id !== currentGoalId).map((g, index) => ({ ...g, order: index }));
                         await database.ref(`goals/${currentGoalId}`).remove().catch(error => handleError(error, 'delete goal'));
@@ -1227,13 +1262,24 @@
         };
         // Initialization
         const init = async () => {
+            // Load goals first
             await loadData('goals', goals, (goal) => {
                 goal.milestones = goal.milestones || [];
                 goal.order = Number(goal.order) || 0;
                 goal.progressHistory = goal.progressHistory || [];
                 updateGoalProgress(goal);
             });
-            await loadData('reminders', reminders, (reminder) => scheduleReminder(reminder));
+            // Load reminders and clean up orphaned ones
+            await loadData('reminders', reminders, (reminder) => {
+                if (goals.some(g => g.id === reminder.goalId)) {
+                    scheduleReminder(reminder);
+                } else {
+                    console.warn(`Removing orphaned reminder ${reminder.id} for non-existent goal ${reminder.goalId}`);
+                    database.ref(`reminders/${reminder.id}`).remove().catch(error => handleError(error, 'remove orphaned reminder'));
+                }
+            });
+            // Filter out invalid reminders
+            reminders = reminders.filter(reminder => goals.some(g => g.id === reminder.goalId));
             renderGoals();
             updateCharts();
             updateReminderGoalOptions(elements.reminderGoal);
@@ -1247,8 +1293,15 @@
                     alert('Failed to request notification permission. Using alerts instead.');
                 });
             }
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js').then(registration => {
+                    console.log('Service Worker registered with scope:', registration.scope);
+                }).catch(error => {
+                    console.error('Service Worker registration failed:', error);
+                });
+            }
         };
-        init();
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
