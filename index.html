@@ -159,7 +159,7 @@
                 font-size: 0.875rem;
             }
             .chart-container {
-                max-height: 250px;
+                max-height: 350px;
             }
         }
     </style>
@@ -232,16 +232,6 @@
                 </div>
                 <button id="createReminderBtn" class="btn btn-primary">Create Reminder</button>
                 <div id="remindersList" class="mt-4 space-y-2"></div>
-            </div>
-            <div class="card p-6 rounded-xl">
-                <h3 class="text-lg font-semibold mb-4" style="color: #e5e7eb;">Export/Import Goals</h3>
-                <div class="flex flex-col space-y-4">
-                    <button id="exportGoalsBtn" class="btn btn-primary">Export Goals as JSON</button>
-                    <div>
-                        <label for="importGoalsInput" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Import Goals</label>
-                        <input type="file" id="importGoalsInput" accept=".json" class="input-field">
-                    </div>
-                </div>
             </div>
         </div>
         <div id="goalModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" role="dialog" aria-labelledby="modalTitle">
@@ -452,8 +442,6 @@
             milestonesList: document.getElementById('milestonesList'),
             completionChart: document.getElementById('completionChart'),
             categoryPieChart: document.getElementById('categoryPieChart'),
-            exportGoalsBtn: document.getElementById('exportGoalsBtn'),
-            importGoalsInput: document.getElementById('importGoalsInput'),
             goalTitleError: document.getElementById('goalTitleError'),
             goalCategoryError: document.getElementById('goalCategoryError'),
             targetAmountError: document.getElementById('targetAmountError'),
@@ -972,49 +960,6 @@
                 categoryPieChart.update();
             }
         };
-        // Export/Import Functions
-        const exportGoals = () => {
-            const dataStr = JSON.stringify(goals, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'goals.json';
-            a.click();
-            URL.revokeObjectURL(url);
-        };
-        const importGoals = async (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                try {
-                    const importedGoals = JSON.parse(e.target.result);
-                    if (!Array.isArray(importedGoals)) throw new Error('Invalid file format');
-                    importedGoals.forEach(goal => {
-                        if (!goal.title || !goal.category) throw new Error('Invalid goal data: Missing title or category');
-                        if (goal.category === 'finance' && (!goal.targetAmount || goal.targetAmount <= 0)) {
-                            throw new Error('Invalid goal data: Finance goals require a valid target amount');
-                        }
-                    });
-                    await database.ref('goals').remove();
-                    goals = importedGoals.map((goal, index) => {
-                        const newGoal = sanitizeGoal({ ...goal, id: database.ref('goals').push().key, order: index });
-                        updateGoalProgress(newGoal);
-                        return newGoal;
-                    });
-                    await saveData('goals', goals);
-                    renderGoals();
-                    updateCharts();
-                    updateReminderGoalOptions(elements.reminderGoal);
-                    updateReminderGoalOptions(elements.editReminderGoal);
-                    alert('Goals imported successfully!');
-                } catch (error) {
-                    alert('Error importing goals: ' + error.message);
-                }
-            };
-            reader.readAsText(file);
-        };
         // Event Listeners
         const setupEventListeners = () => {
             if (elements.goalCategorySelect) {
@@ -1138,23 +1083,31 @@
                     }
                     const id = parseInt(elements.editReminderId ? elements.editReminderId.value : 0);
                     const reminderIndex = reminders.findIndex(n => n.id === id);
-                    if (reminderIndex === -1) return;
+                    if (reminderIndex === -1) {
+                        alert('Reminder not found.');
+                        return;
+                    }
                     const [hour, minute] = (elements.editReminderTime ? elements.editReminderTime.value : '00:00').split(':').map(Number);
                     const formattedTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
                     const oldReminder = reminders[reminderIndex];
                     if (oldReminder.timer) clearTimeout(oldReminder.timer);
                     if (oldReminder.intervalTimer) clearInterval(oldReminder.intervalTimer);
                     reminders[reminderIndex] = {
-                        ...reminders[reminderIndex],
+                        id: id,
                         goalId: elements.editReminderGoal ? elements.editReminderGoal.value : '',
                         message: elements.editReminderMessage ? elements.editReminderMessage.value.trim() : '',
-                        time: formattedTime
+                        time: formattedTime,
+                        order: oldReminder.order
                     };
                     scheduleReminder(reminders[reminderIndex]);
-                    await saveData('reminders', reminders);
-                    renderReminders();
-                    closeModal(elements.editReminderModal, elements.editReminderForm, [elements.editReminderGoalError, elements.editReminderMessageError, elements.editReminderTimeError]);
-                    alert('Reminder updated successfully!');
+                    try {
+                        await saveData('reminders', reminders);
+                        renderReminders();
+                        closeModal(elements.editReminderModal, elements.editReminderForm, [elements.editReminderGoalError, elements.editReminderMessageError, elements.editReminderTimeError]);
+                        alert('Reminder updated successfully!');
+                    } catch (error) {
+                        handleError(error, 'update reminder');
+                    }
                 });
             }
             if (elements.addMilestoneBtn) {
@@ -1257,12 +1210,6 @@
                     updateCharts();
                     saveData('goals', goals);
                 }, 500));
-            }
-            if (elements.exportGoalsBtn) {
-                elements.exportGoalsBtn.addEventListener('click', exportGoals);
-            }
-            if (elements.importGoalsInput) {
-                elements.importGoalsInput.addEventListener('change', importGoals);
             }
             [elements.reminderTime, elements.editReminderTime].forEach(timeInput => {
                 if (timeInput) {
