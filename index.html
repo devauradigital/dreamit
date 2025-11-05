@@ -10,116 +10,223 @@
     <link rel="manifest" href="/site.webmanifest">
     <link rel="apple-touch-icon" href="/navbarlogo.png">
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDKs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-        body {font-family:'Poppins',sans-serif;background:#1a1a1a;color:#e5e7eb;margin:0;}
-        .card {background:#2d2d2d;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border-radius:.75rem;transition:.3s;}
-        .card:hover {transform:translateY(-2px);box-shadow:0 10px 15px -3px rgba(0,0,0,.2);}
-        .btn {padding:.5rem 1rem;border-radius:.5rem;transition:.3s;}
-        .btn-primary {background:#3b82f6;color:white;}
-        .btn-primary:hover {background:#2563eb;transform:translateY(-2px);}
-        .btn-secondary {color:#9ca3af;}
-        .btn-secondary:hover {background:#4b5563;}
-        .input-field {width:100%;padding:.5rem .75rem;border:1px solid #4b5563;border-radius:.375rem;background:#2d2d2d;color:#e5e7eb;}
-        .input-field:focus {outline:none;border-color:#3b82f6;box-shadow:0 0 0 2px #3b82f6;}
-        .error-message {color:#ef4444;font-size:.875rem;margin-top:.25rem;display:none;}
-        .login-screen {position:fixed;inset:0;background:#1a1a1a;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999;padding:1rem;}
-        .login-card {background:#2d2d2d;padding:2rem;border-radius:1rem;width:100%;max-width:400px;box-shadow:0 10px 25px rgba(0,0,0,.3);text-align:center;}
-        .hidden-app {display:none;}
-        .progress-bar {transition:width 1s ease;background:#3b82f6 !important;}
-        .wave-hand {display:inline-block;animation:wave 2.5s infinite ease-in-out;transform-origin:70% 70%;}
-        @keyframes wave{0%,100%{transform:rotate(0)}15%{transform:rotate(14deg)}30%{transform:rotate(-8deg)}45%{transform:rotate(12deg)}60%{transform:rotate(-4deg)}75%{transform:rotate(10deg)}}
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #1a1a1a;
+            color: #e5e7eb;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .card {
+            transition: all 0.3s ease;
+            background-color: #2d2d2d;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+        }
+        .goal-card {
+            cursor: pointer;
+        }
+        .goal-card.dragging {
+            opacity: 0.5;
+            transform: scale(0.98);
+        }
+        .progress-bar {
+            transition: width 1s ease-in-out;
+            background-color: #3b82f6 !important;
+        }
+        .milestone-checkbox:checked + label {
+            text-decoration: line-through;
+            color: #9ca3af;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes wave {
+            0% { transform: rotate(0deg); }
+            15% { transform: rotate(14deg); }
+            30% { transform: rotate(-8deg); }
+            45% { transform: rotate(12deg); }
+            60% { transform: rotate(-4deg); }
+            75% { transform: rotate(10deg); }
+            100% { transform: rotate(0deg); }
+        }
+        .wave-hand {
+            display: inline-block;
+            animation: wave 2.5s infinite ease-in-out;
+            transform-origin: 70% 70%;
+        }
+        .btn {
+            transition: all 0.3s ease;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+        }
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb;
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            color: #9ca3af;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+        .btn-danger:hover {
+            background-color: rgba(239, 68, 68, 0.1);
+        }
+        .btn-edit:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        .input-field, .select-field, .textarea-field {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #4b5563;
+            border-radius: 0.375rem;
+            background-color: #2d2d2d;
+            color: #e5e7eb;
+            transition: all 0.3s ease;
+        }
+        .input-field:focus, .select-field:focus, .textarea-field:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px #3b82f6;
+        }
+        .text-gray-400 {
+            color: #9ca3af !important;
+        }
+        .text-gray-200 {
+            color: #e5e7eb !important;
+        }
+        .text-gray-300 {
+            color: #9ca3af !important;
+        }
+        .error-message {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+        .spinner {
+            border: 4px solid rgba(59, 130, 246, 0.2);
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .nav-tabs {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .nav-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-height: 300px;
+        }
+        @media (max-width: 768px) {
+            .tab-btn {
+                font-size: 0.875rem;
+            }
+            .chart-container {
+                max-height: 350px;
+            }
+        }
     </style>
 </head>
 <body class="min-h-screen">
-
-<!-- LOGIN / REGISTER SCREEN -->
-<div id="authScreen" class="login-screen">
-    <div class="login-card">
-        <img src="navbarlogo.png" alt="Logo" class="h-12 mx-auto mb-4">
-        <h2 class="text-2xl font-bold text-white mb-2" id="authTitle">Welcome to Dreamit</h2>
-        <p id="authPrompt" class="text-gray-400 mb-4">Sign in to continue</p>
-
-        <!-- Username (shown to user) -->
-        <input type="text" id="usernameInput" class="input-field mb-3" placeholder="Username" autocomplete="username">
-        <!-- Hidden email (internal) -->
-        <input type="email" id="emailInput" class="hidden" value="">
-        <input type="password" id="passwordInput" class="input-field mb-3" placeholder="Password" autocomplete="current-password">
-        <p id="authError" class="error-message mb-3">Invalid credentials</p>
-
-        <button id="authActionBtn" class="btn btn-primary w-full mb-2">Sign In</button>
-        <p class="text-sm text-gray-400">
-            <span id="toggleText">Don't have an account?</span>
-            <button id="toggleAuthBtn" class="text-blue-400 hover:underline ml-1">Register</button>
-        </p>
-    </div>
-</div>
-
-<!-- MAIN APP (HIDDEN UNTIL LOGGED IN) -->
-<div id="mainApp" class="hidden-app">
     <div class="container mx-auto px-4 py-8 max-w-6xl">
         <header class="mb-10">
             <div class="flex justify-between items-center">
                 <div>
-                    <img src="navbarlogo.png" alt="Logo" class="h-10 w-auto">
-                    <p class="text-xl text-gray-200 mt-2">Hi, <span id="userName">User</span> <span class="wave-hand">👋</span></p>
+                    <img src="navbarlogo.png" alt="Goal Tracker Logo" class="h-10 w-auto">
                 </div>
-                <button id="logoutBtn" class="btn btn-secondary text-sm">Logout</button>
             </div>
             <p class="text-gray-300 mt-2">Your companion for reaching your goals</p>
         </header>
-
-        <!-- Dashboard & Modals (same as before) -->
+        <nav class="mb-8 border-b" style="border-color: #4b5563;">
+            <ul class="nav-tabs flex space-x-4 sm:space-x-8 overflow-x-auto md:overflow-visible">
+                <li><button class="tab-btn active py-2 px-1 border-b-2 border-blue-400 text-blue-400 text-sm sm:text-base" data-tab="dashboard" aria-selected="true">Dashboard</button></li>
+            </ul>
+        </nav>
         <div id="dashboard" class="tab-content active">
-            <div id="loadingSpinner" class="text-center py-10"><div class="inline-block border-4 border-t-blue-500 border-gray-600 rounded-full w-10 h-10 animate-spin"></div></div>
-            <div id="goalsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 hidden"></div>
+            <div id="loadingSpinner" class="loading-spinner">
+                <div class="spinner"></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 hidden" id="goalsContainer"></div>
             <div id="noGoalsMessage" class="text-center py-20 hidden">
-                <img src="no_goal.png" alt="No goals" class="mx-auto mb-4 rounded-lg w-64">
+                <img src="no_goal.png" alt="No goals yet illustration" class="mx-auto mb-4 rounded-lg" style="width: 300px; height: 200px;">
                 <h3 class="text-xl font-semibold text-gray-200">No goals yet</h3>
-                <p class="text-gray-400 mb-4">Create your first goal to begin.</p>
+                <p class="text-gray-400 mb-4">Create your first goal to begin your journey.</p>
                 <button id="createFirstGoalBtn" class="btn btn-primary">Create Your First Goal</button>
             </div>
         </div>
-
-        <!-- Goal Modal -->
-        <div id="goalModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-            <div class="card p-6 w-full max-w-md mx-4">
+        <div id="goalModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" role="dialog" aria-labelledby="modalTitle">
+            <div class="card rounded-xl p-6 w-full max-w-md mx-4">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 id="modalTitle" class="text-xl font-semibold text-gray-200">Create New Goal</h3>
-                    <button id="closeModalBtn" class="text-gray-400 hover:text-gray-200">
-                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <h3 id="modalTitle" class="text-xl font-semibold" style="color: #e5e7eb;">Create New Goal</h3>
+                    <button id="closeModalBtn" class="text-gray-400 hover:text-gray-200" aria-label="Close modal">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
                 </div>
                 <form id="goalForm">
                     <input type="hidden" id="editGoalId">
                     <div class="mb-4">
-                        <label class="block text-sm text-gray-400 mb-1">Title</label>
-                        <input type="text" id="goalTitle" required class="input-field" placeholder="Enter title">
-                        <p id="goalTitleError" class="error-message">Required</p>
+                        <label for="goalTitle" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Goal Title</label>
+                        <input type="text" id="goalTitle" required class="input-field" placeholder="Enter goal title" aria-describedby="goalTitleError">
+                        <p id="goalTitleError" class="error-message">Goal title is required</p>
                     </div>
                     <div class="mb-4">
-                        <label class="block text-sm text-gray-400 mb-1">Description</label>
-                        <textarea id="goalDescription" class="input-field" rows="3" placeholder="Optional"></textarea>
+                        <label for="goalDescription" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Description</label>
+                        <textarea id="goalDescription" class="textarea-field" rows="4" placeholder="Enter goal description"></textarea>
                     </div>
                     <div class="mb-4">
-                        <label class="block text-sm text-gray-400 mb-1">Category</label>
-                        <select id="goalCategory" required class="input-field">
-                            <option value="">Select</option>
+                        <label for="goalCategory" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Category</label>
+                        <select id="goalCategory" class="select-field" required aria-describedby="goalCategoryError">
+                            <option value="">Select Category</option>
                             <option value="health">Health</option>
                             <option value="career">Career</option>
                             <option value="finance">Finance</option>
                             <option value="personal">Personal Growth</option>
                         </select>
-                        <p id="goalCategoryError" class="error-message">Required</p>
+                        <p id="goalCategoryError" class="error-message">Please select a category</p>
                     </div>
                     <div id="financeAmountField" class="mb-4 hidden">
-                        <label class="block text-sm text-gray-400 mb-1">Target Amount (₹)</label>
-                        <input type="number" id="targetAmount" min="1" class="input-field" placeholder="10000">
-                        <p id="targetAmountError" class="error-message">Enter valid amount</p>
+                        <label for="targetAmount" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Target Amount (₹)</label>
+                        <input type="number" id="targetAmount" min="1" step="1" class="input-field" placeholder="Enter target amount" aria-describedby="targetAmountError">
+                        <p id="targetAmountError" class="error-message">Please enter a valid target amount</p>
                     </div>
                     <div class="flex justify-end space-x-3">
                         <button type="button" id="cancelGoalBtn" class="btn btn-secondary">Cancel</button>
@@ -128,375 +235,610 @@
                 </form>
             </div>
         </div>
-
-        <!-- Goal Detail Modal -->
-        <div id="goalDetailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-            <div class="card p-6 w-full max-w-md mx-4">
+        <div id="goalDetailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" role="dialog" aria-labelledby="detailGoalTitle">
+            <div class="card rounded-xl p-6 w-full max-w-md mx-4">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 id="detailGoalTitle" class="text-xl font-semibold text-gray-200"></h3>
+                    <h3 id="detailGoalTitle" class="text-xl font-semibold" style="color: #e5e7eb;"></h3>
                     <div class="flex space-x-2">
-                        <button id="editGoalBtn" class="text-gray-400 hover:text-gray-200" title="Edit">
-                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        <button id="editGoalBtn" class="text-gray-400 hover:text-gray-200" title="Edit Goal" aria-label="Edit Goal">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
                         </button>
-                        <button id="closeDetailModalBtn" class="text-gray-400 hover:text-gray-200">
-                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        <button id="closeDetailModalBtn" class="text-gray-400 hover:text-gray-200" aria-label="Close modal">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
                         </button>
                     </div>
                 </div>
-                <p id="detailDescription" class="text-sm text-gray-400 mb-4"></p>
-
-
                 <div class="mb-4">
-                    <div class="flex justify-between mb-1"><span class="text-sm text-blue-400">Progress</span><span id="progressPercentage" class="text-sm text-gray-200">0%</span></div>
-                    <div class="w-full bg-gray-700 rounded-full h-2.5"><div id="detailProgressBar" class="progress-bar h-2.5 rounded-full" style="width:0%"></div></div>
-                    <div id="financeProgressText" class="text-sm text-gray-400 mt-2 hidden">Current: ₹<span id="currentAmountDisplay">0</span> / ₹<span id="targetAmountDisplay">0</span></div>
+                    <p id="detailDescription" class="text-sm" style="color: #9ca3af;"></p>
                 </div>
-                <span id="detailCategory" class="px-2 py-1 text-xs rounded-full"></span>
-                <div id="milestoneSection" class="hidden mt-4">
-                    <h4 class="font-medium text-gray-200 mb-2">Milestones</h4>
-                    <div id="milestonesList" class="space-y-2 mb-3"></div>
-                    <div class="flex"><input type="text" id="newMilestoneInput" placeholder="Add milestone" class="input-field flex-grow rounded-l-md"><button id="addMilestoneBtn" class="btn btn-primary rounded-l-none">Add</button></div>
+                <div class="mb-4">
+                    <div class="flex justify-between mb-1">
+                        <span class="text-sm font-medium text-blue-400">Progress</span>
+                        <span id="progressPercentage" class="text-sm font-medium" style="color: #e5e7eb;">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-600 rounded-full h-2.5" style="background-color: #4b5563;">
+                        <div id="detailProgressBar" class="bg-blue-500 h-2.5 rounded-full progress-bar" style="width: 0%"></div>
+                    </div>
+                    <div id="financeProgressText" class="text-sm mt-2 hidden" style="color: #9ca3af;">
+                        Current: ₹<span id="currentAmountDisplay">0</span> / ₹<span id="targetAmountDisplay">0</span>
+                    </div>
                 </div>
-                <div id="financeSliderSection" class="hidden mt-4">
-                    <h4 class="font-medium text-gray-200 mb-2">Current Amount (₹)</h4>
-                    <input type="range" id="currentAmountSlider" min="0" max="10000" value="0" class="input-field mb-2">
-                    <div class="flex justify-between text-sm text-gray-400 mb-2"><span id="currentAmountLabel">₹0</span><span id="targetAmountLabel">₹10000</span></div>
-                    <input type="number" id="currentAmountInput" min="0" class="input-field" placeholder="Enter amount">
+                <div class="flex items-center text-sm mb-3" style="color: #9ca3af;">
+                    <span id="detailCategory" class="px-2 py-1 text-xs rounded-full"></span>
                 </div>
-                <div class="mt-6 flex justify-end"><button id="deleteGoalBtn" class="text-red-400 hover:text-red-300">Delete Goal</button></div>
+                <div id="milestoneSection" class="hidden">
+                    <h4 class="font-medium mb-3" style="color: #e5e7eb;">Milestones</h4>
+                    <div id="milestonesList" class="space-y-2 mb-4"></div>
+                    <div class="flex">
+                        <input type="text" id="newMilestoneInput" placeholder="Add a new milestone" class="input-field flex-grow rounded-l-md" aria-label="New milestone">
+                        <button id="addMilestoneBtn" class="btn btn-primary rounded-l-none">Add</button>
+                    </div>
+                </div>
+                <div id="financeSliderSection" class="hidden">
+                    <h4 class="font-medium mb-3" style="color: #e5e7eb;">Current Amount (₹)</h4>
+                    <input type="range" id="currentAmountSlider" min="0" max="10000" value="0" class="input-field mb-2" aria-label="Current amount">
+                    <div class="flex justify-between text-sm mb-2" style="color: #9ca3af;">
+                        <span id="currentAmountLabel">₹0</span>
+                        <span id="targetAmountLabel">₹10000</span>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="number" id="currentAmountInput" min="0" step="1" class="input-field" placeholder="Enter current amount" aria-label="Current amount input">
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button id="deleteGoalBtn" class="btn btn-danger text-red-400">Delete Goal</button>
+                </div>
             </div>
         </div>
-
         <footer class="mt-10 py-4 text-center text-gray-400">
-            <p>Powered by <a href="https://devauradigital.com" target="_blank" class="text-blue-400 hover:text-blue-500">Devaura Digital</a></p>
+            <p>Powered By <a href="https://devauradigital.com" target="_blank" class="text-blue-400 hover:text-blue-500 transition">Devaura Digital</a></p>
         </footer>
     </div>
-</div>
-
-<script>
-/* ========== FIREBASE CONFIG ========== */
-const firebaseConfig = {
-    apiKey: "AIzaSyA3Y1aDGpyKD1QM50GpPsl6OsvK026zmOU",
-    authDomain: "goal-tracker-1725.firebaseapp.com",
-    databaseURL: "https://goal-tracker-1725-default-rtdb.firebaseio.com",
-    projectId: "goal-tracker-1725",
-    storageBucket: "goal-tracker-1725.firebasestorage.app",
-    messagingSenderId: "1071901848843",
-    appId: "1:1071901848843:web:55c4186244e40f8b131e0e"
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.database();
-
-/* ========== AUTH UI ========== */
-const authScreen = document.getElementById('authScreen');
-const mainApp = document.getElementById('mainApp');
-const authTitle = document.getElementById('authTitle');
-const authPrompt = document.getElementById('authPrompt');
-const authActionBtn = document.getElementById('authActionBtn');
-const toggleAuthBtn = document.getElementById('toggleAuthBtn');
-const toggleText = document.getElementById('toggleText');
-const usernameInput = document.getElementById('usernameInput');
-const emailInput = document.getElementById('emailInput');
-const passwordInput = document.getElementById('passwordInput');
-const authError = document.getElementById('authError');
-
-let isLogin = true;
-
-// Helper: generate email from username
-function usernameToEmail(username) {
-    return `${username.toLowerCase().replace(/[^a-z0-9]/g, '')}@dreamit.local`;
-}
-
-toggleAuthBtn.addEventListener('click', () => {
-    isLogin = !isLogin;
-    authTitle.textContent = isLogin ? 'Welcome Back' : 'Create Account';
-    authPrompt.textContent = isLogin ? 'Sign in with username' : 'Choose a username';
-    authActionBtn.textContent = isLogin ? 'Sign In' : 'Register';
-    toggleText.textContent = isLogin ? "Don't have an account?" : 'Already have an account?';
-    toggleAuthBtn.textContent = isLogin ? 'Register' : 'Sign In';
-    authError.style.display = 'none';
-});
-
-authActionBtn.addEventListener('click', () => {
-    const username = usernameInput.value.trim();
-    const password = passwordInput.value;
-    if (!username || !password) return showAuthError('Enter username and password');
-
-    const email = usernameToEmail(username);
-
-    if (isLogin) {
-        auth.signInWithEmailAndPassword(email, password)
-            .catch(err => showAuthError(err.code === 'auth/user-not-found' ? 'Username not found' : err.message));
-    } else {
-        // Register: create user with generated email
-        auth.createUserWithEmailAndPassword(email, password)
-            .then(cred => cred.user.updateProfile({ displayName: username }))
-            .catch(err => showAuthError(err.code === 'auth/email-already-in-use' ? 'Username taken' : err.message));
-    }
-});
-
-function showAuthError(msg) {
-    authError.textContent = msg;
-    authError.style.display = 'block';
-}
-
-/* ========== ON AUTH STATE CHANGE ========== */
-auth.onAuthStateChanged(user => {
-    if (user) {
-        const displayName = user.displayName || user.email.split('@')[0];
-        document.getElementById('userName').textContent = displayName;
-        authScreen.remove();
-        mainApp.classList.remove('hidden-app');
-        initGoalApp(user.uid);
-    } else {
-        authScreen.style.display = 'flex';
-        mainApp.classList.add('hidden-app');
-    }
-});
-
-/* ========== LOGOUT ========== */
-document.getElementById('logoutBtn').addEventListener('click', () => auth.signOut());
-
-/* ========== GOAL APP (same as before) ========== */
-// [All goal code from previous version — unchanged]
-// For brevity, paste the full goal logic here (loadGoals, saveGoals, renderGoals, etc.)
-
-let goals = [], currentGoalId = null;
-const elements = {
-    goalsContainer: document.getElementById('goalsContainer'),
-    noGoalsMessage: document.getElementById('noGoalsMessage'),
-    loadingSpinner: document.getElementById('loadingSpinner'),
-    goalModal: document.getElementById('goalModal'),
-    goalDetailModal: document.getElementById('goalDetailModal'),
-    goalForm: document.getElementById('goalForm'),
-    createFirstGoalBtn: document.getElementById('createFirstGoalBtn'),
-    closeModalBtn: document.getElementById('closeModalBtn'),
-    cancelGoalBtn: document.getElementById('cancelGoalBtn'),
-    closeDetailModalBtn: document.getElementById('closeDetailModalBtn'),
-    editGoalBtn: document.getElementById('editGoalBtn'),
-    deleteGoalBtn: document.getElementById('deleteGoalBtn'),
-    addMilestoneBtn: document.getElementById('addMilestoneBtn'),
-    newMilestoneInput: document.getElementById('newMilestoneInput'),
-    goalCategory: document.getElementById('goalCategory'),
-    financeAmountField: document.getElementById('financeAmountField'),
-    targetAmount: document.getElementById('targetAmount'),
-    milestoneSection: document.getElementById('milestoneSection'),
-    financeSliderSection: document.getElementById('financeSliderSection'),
-    currentAmountSlider: document.getElementById('currentAmountSlider'),
-    currentAmountInput: document.getElementById('currentAmountInput'),
-    currentAmountLabel: document.getElementById('currentAmountLabel'),
-    targetAmountLabel: document.getElementById('targetAmountLabel'),
-    currentAmountDisplay: document.getElementById('currentAmountDisplay'),
-    targetAmountDisplay: document.getElementById('targetAmountDisplay'),
-    modalTitle: document.getElementById('modalTitle'),
-    submitGoalBtn: document.getElementById('submitGoalBtn'),
-    editGoalId: document.getElementById('editGoalId'),
-    goalTitle: document.getElementById('goalTitle'),
-    goalDescription: document.getElementById('goalDescription'),
-    detailGoalTitle: document.getElementById('detailGoalTitle'),
-    detailDescription: document.getElementById('detailDescription'),
-    progressPercentage: document.getElementById('progressPercentage'),
-    detailProgressBar: document.getElementById('detailProgressBar'),
-    detailCategory: document.getElementById('detailCategory'),
-    milestonesList: document.getElementById('milestonesList'),
-    goalTitleError: document.getElementById('goalTitleError'),
-    goalCategoryError: document.getElementById('goalCategoryError'),
-    targetAmountError: document.getElementById('targetAmountError')
-};
-
-function formatCurrency(n) { return isNaN(n) ? '0' : n.toLocaleString('en-IN'); }
-function getCategoryInfo(c) {
-    const map = {
-        health: {n:'Health',c:'bg-green-900 text-green-300'},
-        career: {n:'Career',c:'bg-purple-900 text-purple-300'},
-        finance: {n:'Finance',c:'bg-blue-900 text-blue-300'},
-        personal: {n:'Personal Growth',c:'bg-pink-900 text-pink-300'}
-    };
-    return map[c] || {n:'Other',c:'bg-gray-900 text-gray-300'};
-}
-
-function sanitizeGoal(g) {
-    return {
-        id: g.id || db.ref().push().key,
-        title: g.title || '',
-        description: g.description || '',
-        category: g.category || '',
-        progress: 0,
-        milestones: Array.isArray(g.milestones) ? g.milestones.map(m=>({id:m.id||1,text:m.text||'',completed:!!m.completed})) : [],
-        targetAmount: g.category==='finance' ? Number(g.targetAmount)||null : null,
-        currentAmount: g.category==='finance' ? Number(g.currentAmount)||0 : null,
-        order: Number(g.order)||0,
-        createdAt: g.createdAt || new Date().toISOString(),
-        progressHistory: g.progressHistory || []
-    };
-}
-
-async function saveGoals(uid) {
-    const updates = {};
-    goals.forEach((g,i) => { updates[`users/${uid}/goals/${g.id}`] = {...g, order:i}; });
-    await db.ref().update(updates);
-}
-async function loadGoals(uid) {
-    elements.loadingSpinner.style.display = 'block';
-    const snap = await db.ref(`users/${uid}/goals`).once('value');
-    goals = [];
-    snap.forEach(child => {
-        const g = child.val();
-        g.milestones = g.milestones || [];
-        g.progressHistory = g.progressHistory || [];
-        updateProgress(g);
-        goals.push(g);
-    });
-    goals.sort((a,b)=>a.order-b.order);
-    elements.loadingSpinner.style.display = 'none';
-    renderGoals();
-}
-
-function updateProgress(goal) {
-    if (goal.category === 'finance') {
-        goal.progress = goal.targetAmount ? Math.min(100, Math.round((goal.currentAmount||0)/goal.targetAmount*100)) : 0;
-    } else {
-        const done = goal.milestones.filter(m=>m.completed).length;
-        goal.progress = goal.milestones.length ? Math.round(done/goal.milestones.length*100) : 0;
-    }
-    goal.progressHistory.push({timestamp:new Date().toISOString(), progress:goal.progress});
-    if (currentGoalId===goal.id) updateDetail(goal);
-    updateCard(goal);
-}
-function updateCard(goal) {
-    const card = elements.goalsContainer.querySelector(`[data-id="${goal.id}"]`);
-    if (!card) return;
-    card.querySelector('.progress-bar').style.width = `${goal.progress}%`;
-    card.querySelector('.progress-text').textContent = `${goal.progress}%`;
-    if (goal.category==='finance') card.querySelector('.finance-target').textContent = `Current: ₹${formatCurrency(goal.currentAmount)} / ₹${formatCurrency(goal.targetAmount)}`;
-}
-function updateDetail(goal) {
-    const {n,c} = getCategoryInfo(goal.category);
-    elements.detailGoalTitle.textContent = goal.title;
-    elements.detailDescription.textContent = goal.description||'';
-    elements.detailCategory.textContent = n; elements.detailCategory.className = `px-2 py-1 text-xs rounded-full ${c}`;
-    elements.progressPercentage.textContent = `${goal.progress}%`;
-    elements.detailProgressBar.style.width = `${goal.progress}%`;
-    elements.milestoneSection.classList.toggle('hidden', goal.category==='finance');
-    elements.financeSliderSection.classList.toggle('hidden', goal.category!=='finance');
-    elements.financeProgressText.classList.toggle('hidden', goal.category!=='finance');
-    if (goal.category==='finance') {
-        const max = goal.targetAmount||10000;
-        elements.currentAmountSlider.max = max; elements.currentAmountSlider.value = goal.currentAmount||0;
-        elements.currentAmountInput.max = max; elements.currentAmountInput.value = goal.currentAmount||0;
-        elements.currentAmountLabel.textContent = `₹${formatCurrency(goal.currentAmount||0)}`;
-        elements.targetAmountLabel.textContent = `₹${formatCurrency(max)}`;
-        elements.currentAmountDisplay.textContent = formatCurrency(goal.currentAmount||0);
-        elements.targetAmountDisplay.textContent = formatCurrency(max);
-    } else {
-        elements.milestonesList.innerHTML = '';
-        (goal.milestones||[]).forEach(m => {
-            const div = document.createElement('div'); div.className='flex items-center';
-            div.innerHTML = `<input type="checkbox" class="mr-2" ${m.completed?'checked':''}>
-                             <label class="flex-grow ${m.completed?'line-through text-gray-500':''}">${m.text}</label>
-                             <button class="text-blue-400 edit-milestone" data-id="${m.id}">Edit</button>`;
-            elements.milestonesList.appendChild(div);
-            div.querySelector('input').addEventListener('change', e=>{
-                m.completed = e.target.checked; updateProgress(goal); saveGoals(auth.currentUser.uid); renderGoals();
-            });
-            div.querySelector('.edit-milestone').addEventListener('click',()=>{
-                const txt = prompt('Edit:',m.text); if(txt){ m.text=txt; updateDetail(goal); saveGoals(auth.currentUser.uid); }
-            });
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyA3Y1aDGpyKD1QM50GpPsl6OsvK026zmOU",
+            authDomain: "goal-tracker-1725.firebaseapp.com",
+            databaseURL: "https://goal-tracker-1725-default-rtdb.firebaseio.com",
+            projectId: "goal-tracker-1725",
+            storageBucket: "goal-tracker-1725.firebasestorage.app",
+            messagingSenderId: "1071901848843",
+            appId: "1:1071901848843:web:55c4186244e40f8b131e0e",
+            measurementId: "G-9RD6ZZ02EY"
+        };
+        let database;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            database = firebase.database();
+        } catch (error) {
+            console.error('Firebase initialization failed:', error);
+            alert('Failed to initialize Firebase. Please check your configuration and try again.');
+        }
+        const elements = {
+            dashboardTab: document.getElementById('dashboard'),
+            tabBtns: document.querySelectorAll('.tab-btn'),
+            goalsContainer: document.getElementById('goalsContainer'),
+            noGoalsMessage: document.getElementById('noGoalsMessage'),
+            goalModal: document.getElementById('goalModal'),
+            goalDetailModal: document.getElementById('goalDetailModal'),
+            goalForm: document.getElementById('goalForm'),
+            createFirstGoalBtn: document.getElementById('createFirstGoalBtn'),
+            closeModalBtn: document.getElementById('closeModalBtn'),
+            cancelGoalBtn: document.getElementById('cancelGoalBtn'),
+            closeDetailModalBtn: document.getElementById('closeDetailModalBtn'),
+            editGoalBtn: document.getElementById('editGoalBtn'),
+            deleteGoalBtn: document.getElementById('deleteGoalBtn'),
+            addMilestoneBtn: document.getElementById('addMilestoneBtn'),
+            newMilestoneInput: document.getElementById('newMilestoneInput'),
+            goalCategorySelect: document.getElementById('goalCategory'),
+            financeAmountField: document.getElementById('financeAmountField'),
+            targetAmountInput: document.getElementById('targetAmount'),
+            milestoneSection: document.getElementById('milestoneSection'),
+            financeSliderSection: document.getElementById('financeSliderSection'),
+            currentAmountSlider: document.getElementById('currentAmountSlider'),
+            currentAmountInput: document.getElementById('currentAmountInput'),
+            currentAmountLabel: document.getElementById('currentAmountLabel'),
+            targetAmountLabel: document.getElementById('targetAmountLabel'),
+            currentAmountDisplay: document.getElementById('currentAmountDisplay'),
+            targetAmountDisplay: document.getElementById('targetAmountDisplay'),
+            modalTitle: document.getElementById('modalTitle'),
+            submitGoalBtn: document.getElementById('submitGoalBtn'),
+            editGoalId: document.getElementById('editGoalId'),
+            goalTitle: document.getElementById('goalTitle'),
+            goalDescription: document.getElementById('goalDescription'),
+            detailDescription: document.getElementById('detailDescription'),
+            progressPercentage: document.getElementById('progressPercentage'),
+            detailProgressBar: document.getElementById('detailProgressBar'),
+            detailGoalTitle: document.getElementById('detailGoalTitle'),
+            detailCategory: document.getElementById('detailCategory'),
+            milestonesList: document.getElementById('milestonesList'),
+            goalTitleError: document.getElementById('goalTitleError'),
+            goalCategoryError: document.getElementById('goalCategoryError'),
+            targetAmountError: document.getElementById('targetAmountError'),
+            loadingSpinner: document.getElementById('loadingSpinner')
+        };
+        let goals = [];
+        let currentGoalId = null;
+        // Utility Functions
+        const formatCurrency = (amount) => isNaN(amount) ? '0' : amount.toLocaleString('en-IN');
+        const getCategoryInfo = (category) => ({
+            name: ({ health: 'Health', career: 'Career', finance: 'Finance', personal: 'Personal Growth' }[category] || 'Other'),
+            color: ({ health: 'bg-green-900 text-green-300', career: 'bg-purple-900 text-purple-300', finance: 'bg-blue-900 text-blue-300', personal: 'bg-pink-900 text-pink-300' }[category] || 'bg-gray-900 text-gray-300')
         });
-    }
-}
-
-function renderGoalCard(goal) {
-    const {n,c} = getCategoryInfo(goal.category);
-    const el = document.createElement('div'); el.className='card p-5 rounded-xl cursor-pointer'; el.dataset.id=goal.id;
-    el.innerHTML = `<div class="flex justify-between mb-2"><h3 class="text-lg font-semibold text-gray-200">${goal.title}</h3><span class="text-xs px-2 py-1 rounded-full ${c}">${n}</span></div>
-                    <p class="text-sm text-gray-400 mb-3 goal-desc">${goal.description||''}</p>
-                    <div class="flex justify-between mb-1"><span class="text-sm text-blue-400">Progress</span><span class="progress-text text-sm text-gray-200">${goal.progress}%</span></div>
-                    <div class="w-full bg-gray-700 rounded-full h-2.5"><div class="progress-bar h-2.5 rounded-full" style="width:${goal.progress}%"></div></div>
-                    ${goal.category==='finance'?`<div class="finance-target text-xs text-gray-400 mt-2">Current: ₹${formatCurrency(goal.currentAmount)} / ₹${formatCurrency(goal.targetAmount)}</div>`:''}`;
-    el.addEventListener('click',()=>openDetail(goal.id));
-    return el;
-}
-function renderGoals() {
-    elements.goalsContainer.innerHTML='';
-    goals.forEach(g=>elements.goalsContainer.appendChild(renderGoalCard(g)));
-    if (goals.length===0) { elements.goalsContainer.classList.add('hidden'); elements.noGoalsMessage.classList.remove('hidden'); }
-    else { elements.goalsContainer.classList.remove('hidden'); elements.noGoalsMessage.classList.add('hidden'); }
-}
-function openDetail(id) {
-    const g = goals.find(x=>x.id===id); if(!g) return;
-    currentGoalId = id; updateDetail(g); elements.goalDetailModal.classList.remove('hidden');
-}
-function toggleFinance(show) {
-    elements.financeAmountField.classList.toggle('hidden',!show);
-    elements.targetAmount.toggleAttribute('required',show);
-}
-
-/* ========== EVENT LISTENERS ========== */
-function setupEvents() {
-    elements.goalCategory.addEventListener('change',()=>toggleFinance(elements.goalCategory.value==='finance'));
-    elements.createFirstGoalBtn.addEventListener('click',()=>openModal('Create New Goal','Create Goal'));
-    elements.closeModalBtn.addEventListener('click',()=>closeModal());
-    elements.cancelGoalBtn.addEventListener('click',()=>closeModal());
-    elements.closeDetailModalBtn.addEventListener('click',()=>elements.goalDetailModal.classList.add('hidden'));
-    elements.editGoalBtn.addEventListener('click',()=>{
-        const g = goals.find(x=>x.id===currentGoalId);
-        closeModal(elements.goalDetailModal); openModal('Edit Goal','Update Goal');
-        elements.editGoalId.value = g.id; elements.goalTitle.value = g.title; elements.goalDescription.value = g.description||'';
-        elements.goalCategory.value = g.category; toggleFinance(g.category==='finance');
-        if(g.category==='finance') elements.targetAmount.value = g.targetAmount||'';
-    });
-    elements.goalForm.addEventListener('submit', async e=>{
-        e.preventDefault();
-        const title = elements.goalTitle.value.trim();
-        const cat = elements.goalCategory.value;
-        const target = cat==='finance'?parseFloat(elements.targetAmount.value):null;
-        if(!title||!cat||(cat==='finance'&&!target)) return alert('Fill required fields');
-        const goal = sanitizeGoal({
-            id: elements.editGoalId.value || db.ref().push().key,
-            title, description: elements.goalDescription.value.trim(), category: cat,
-            targetAmount: target, currentAmount: elements.editGoalId.value ? goals.find(x=>x.id===elements.editGoalId.value).currentAmount : 0
+        const debounce = (func, wait) => {
+            let timeout;
+            return (...args) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func(...args), wait);
+            };
+        };
+        const sanitizeGoal = (goal) => ({
+            id: goal.id && !/[.#$/\[\]]/.test(goal.id) ? goal.id : database.ref('goals').push().key,
+            title: goal.title || '',
+            description: goal.description || '',
+            category: goal.category || '',
+            progress: Number(goal.progress) || 0,
+            milestones: Array.isArray(goal.milestones) ? goal.milestones.map(m => ({
+                id: Number(m.id) || 1,
+                text: m.text || '',
+                completed: !!m.completed
+            })) : [],
+            targetAmount: goal.category === 'finance' ? Number(goal.targetAmount) || null : null,
+            currentAmount: goal.category === 'finance' ? Number(goal.currentAmount) || 0 : null,
+            order: Number(goal.order) || 0,
+            createdAt: goal.createdAt || new Date().toISOString(),
+            progressHistory: goal.progressHistory || []
         });
-        if(elements.editGoalId.value) { const i=goals.findIndex(x=>x.id===goal.id); goals[i]=goal; }
-        else goals.push(goal);
-        updateProgress(goal); await saveGoals(auth.currentUser.uid); renderGoals(); closeModal();
-    });
-    elements.addMilestoneBtn.addEventListener('click',()=>{
-        const txt = elements.newMilestoneInput.value.trim(); if(!txt) return;
-        const g = goals.find(x=>x.id===currentGoalId);
-        g.milestones.push({id: g.milestones.length?Math.max(...g.milestones.map(m=>m.id))+1:1, text:txt, completed:false});
-        elements.newMilestoneInput.value=''; updateProgress(g); saveGoals(auth.currentUser.uid); updateDetail(g);
-    });
-    elements.deleteGoalBtn.addEventListener('click', async ()=>{
-        if(!confirm('Delete goal?')) return;
-        goals = goals.filter(x=>x.id!==currentGoalId);
-        await db.ref(`users/${auth.currentUser.uid}/goals/${currentGoalId}`).remove();
-        elements.goalDetailModal.classList.add('hidden'); renderGoals();
-    });
-    elements.currentAmountSlider.addEventListener('input',()=>syncSliderInput());
-    elements.currentAmountInput.addEventListener('input',()=>syncSliderInput());
-    function syncSliderInput() {
-        const g = goals.find(x=>x.id===currentGoalId);
-        let val = parseFloat(elements.currentAmountInput.value)||0;
-        if(val>g.targetAmount) val=g.targetAmount;
-        g.currentAmount=val; elements.currentAmountSlider.value=val; elements.currentAmountLabel.textContent=`₹${formatCurrency(val)}`;
-        updateProgress(g); saveGoals(auth.currentUser.uid); renderGoals();
-    }
-}
-function openModal(title, btnText) {
-    elements.modalTitle.textContent=title; elements.submitGoalBtn.textContent=btnText;
-    elements.goalModal.classList.remove('hidden'); elements.goalTitle.focus();
-}
-function closeModal() {
-    elements.goalModal.classList.add('hidden'); elements.goalForm.reset();
-    [elements.goalTitleError, elements.goalCategoryError, elements.targetAmountError].forEach(e=>e&&e.style&& (e.style.display='none'));
-}
-
-/* ========== INIT ========== */
-function initGoalApp(uid) {
-    loadGoals(uid).then(()=>setupEvents());
-}
-</script>
+        const handleError = (error, action) => {
+            console.error(`Error ${action}:`, error);
+            let message = `Failed to ${action}. `;
+            if (error.code === 'PERMISSION_DENIED') message += 'Permission denied: Check Firebase database rules.';
+            else if (error.code === 'NETWORK_ERROR') message += 'Check your internet connection.';
+            else message += `Error: ${error.message}`;
+            alert(message);
+            throw error;
+        };
+        // Modal Management
+        const openModal = (modalElement, titleElement, title, submitButton, submitText, focusElement) => {
+            if (!modalElement || !titleElement || !submitButton || !focusElement) return;
+            titleElement.textContent = title;
+            submitButton.textContent = submitText;
+            modalElement.classList.remove('hidden');
+            focusElement.focus();
+        };
+        const closeModal = (modalElement, formElement, errorElements = []) => {
+            if (!modalElement) return;
+            modalElement.classList.add('hidden');
+            if (formElement) formElement.reset();
+            errorElements.forEach(el => { if (el) el.style.display = 'none'; });
+        };
+        // Form Validation
+        const validateForm = (fields) => {
+            let hasError = false;
+            fields.forEach(({ value, errorElement, errorMessage, validate }) => {
+                if (!errorElement) return;
+                const isValid = validate(value);
+                errorElement.style.display = isValid ? 'none' : 'block';
+                errorElement.textContent = errorMessage;
+                if (!isValid) hasError = true;
+            });
+            return !hasError;
+        };
+        // Data Management
+        const saveData = async (path, data) => {
+            if (!database) throw new Error('Database not initialized');
+            const updates = {};
+            data.forEach((item, index) => {
+                const sanitizedItem = { ...item };
+                delete sanitizedItem.timer;
+                delete sanitizedItem.intervalTimer;
+                updates[`${path}/${item.id}`] = { ...sanitizedItem, order: index };
+            });
+            await database.ref().update(updates).catch(error => handleError(error, `save ${path}`));
+        };
+        const loadData = async (path, array, processItem) => {
+            if (!database) throw new Error('Database not initialized');
+            if (elements.loadingSpinner) elements.loadingSpinner.classList.remove('hidden');
+            try {
+                const snapshot = await database.ref(path).once('value');
+                array.length = 0;
+                snapshot.forEach(childSnapshot => {
+                    const item = childSnapshot.val();
+                    processItem(item);
+                    array.push(item);
+                });
+                array.sort((a, b) => a.order - b.order);
+            } catch (error) {
+                handleError(error, `load ${path}`);
+            } finally {
+                if (elements.loadingSpinner) elements.loadingSpinner.classList.add('hidden');
+            }
+        };
+        // Goal Functions
+        const updateGoalProgress = (goal) => {
+            if (!goal) return;
+            if (goal.category === 'finance') {
+                goal.progress = goal.targetAmount && goal.targetAmount !== 0 ?
+                    Math.min(100, Math.round((goal.currentAmount || 0) / goal.targetAmount * 100)) : 0;
+            } else {
+                goal.progress = goal.milestones && goal.milestones.length ?
+                    Math.round((goal.milestones.filter(m => m.completed).length / goal.milestones.length) * 100) : 0;
+            }
+            goal.progressHistory = goal.progressHistory || [];
+            goal.progressHistory.push({
+                timestamp: new Date().toISOString(),
+                progress: goal.progress
+            });
+            if (currentGoalId === goal.id) updateGoalDetailModal(goal);
+            updateGoalCard(goal);
+        };
+        const updateGoalCard = (goal) => {
+            if (!goal) return;
+            const goalCard = elements.goalsContainer.querySelector(`.goal-card[data-id="${goal.id}"]`);
+            if (!goalCard) return;
+            const progressBar = goalCard.querySelector('.progress-bar');
+            const progressText = goalCard.querySelector('.progress-text');
+            const description = goalCard.querySelector('.goal-description');
+            if (progressBar) progressBar.style.width = `${goal.progress}%`;
+            if (progressText) progressText.textContent = `${goal.progress}%`;
+            if (description) description.textContent = goal.description || '';
+            if (goal.category === 'finance') {
+                const financeTarget = goalCard.querySelector('.finance-target');
+                if (financeTarget) financeTarget.textContent = `Current: ₹${formatCurrency(goal.currentAmount)} / ₹${formatCurrency(goal.targetAmount)}`;
+            }
+        };
+        const updateGoalDetailModal = (goal) => {
+            if (!goal) return;
+            const { name, color } = getCategoryInfo(goal.category);
+            if (elements.detailGoalTitle) elements.detailGoalTitle.textContent = goal.title || 'Untitled';
+            if (elements.detailDescription) elements.detailDescription.textContent = goal.description || '';
+            if (elements.detailCategory) {
+                elements.detailCategory.textContent = name;
+                elements.detailCategory.className = `px-2 py-1 text-xs rounded-full ${color}`;
+            }
+            if (elements.progressPercentage) elements.progressPercentage.textContent = `${goal.progress}%`;
+            if (elements.detailProgressBar) elements.detailProgressBar.style.width = `${goal.progress}%`;
+            if (elements.milestoneSection) elements.milestoneSection.classList.toggle('hidden', goal.category === 'finance');
+            if (elements.financeSliderSection) elements.financeSliderSection.classList.toggle('hidden', goal.category !== 'finance');
+            if (elements.financeProgressText) elements.financeProgressText.classList.toggle('hidden', goal.category !== 'finance');
+            if (goal.category === 'finance') {
+                const target = goal.targetAmount || 10000;
+                if (elements.currentAmountSlider) {
+                    elements.currentAmountSlider.max = target;
+                    elements.currentAmountSlider.value = goal.currentAmount || 0;
+                }
+                if (elements.currentAmountInput) {
+                    elements.currentAmountInput.max = target;
+                    elements.currentAmountInput.value = goal.currentAmount || 0;
+                }
+                if (elements.currentAmountLabel) elements.currentAmountLabel.textContent = `₹${formatCurrency(goal.currentAmount || 0)}`;
+                if (elements.targetAmountLabel) elements.targetAmountLabel.textContent = `₹${formatCurrency(target)}`;
+                if (elements.currentAmountDisplay) elements.currentAmountDisplay.textContent = formatCurrency(goal.currentAmount || 0);
+                if (elements.targetAmountDisplay) elements.targetAmountDisplay.textContent = formatCurrency(target);
+            } else {
+                if (elements.milestonesList) {
+                    elements.milestonesList.innerHTML = '';
+                    (goal.milestones || []).forEach(milestone => {
+                        const milestoneItem = document.createElement('div');
+                        milestoneItem.className = 'flex items-center';
+                        milestoneItem.innerHTML = `
+                            <input type="checkbox" id="milestone-${milestone.id}" class="milestone-checkbox" ${milestone.completed ? 'checked' : ''} aria-label="${milestone.text}">
+                            <label for="milestone-${milestone.id}" class="flex-grow" style="color: ${milestone.completed ? '#9ca3af' : '#e5e7eb'}; ${milestone.completed ? 'text-decoration: line-through;' : ''}">${milestone.text}</label>
+                            <button class="edit-milestone-btn text-blue-400" data-id="${milestone.id}" title="Edit milestone" aria-label="Edit milestone">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </button>
+                        `;
+                        elements.milestonesList.appendChild(milestoneItem);
+                        const checkbox = milestoneItem.querySelector('.milestone-checkbox');
+                        if (checkbox) {
+                            checkbox.addEventListener('change', (e) => {
+                                milestone.completed = e.target.checked;
+                                updateGoalProgress(goal);
+                                saveData('goals', goals);
+                                renderGoals();
+                            });
+                        }
+                        const editBtn = milestoneItem.querySelector('.edit-milestone-btn');
+                        if (editBtn) {
+                            editBtn.addEventListener('click', () => {
+                                const newText = prompt('Edit milestone:', milestone.text);
+                                if (newText && newText.trim()) {
+                                    milestone.text = newText.trim();
+                                    updateGoalDetailModal(goal);
+                                    saveData('goals', goals);
+                                    renderGoals();
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+        };
+        const renderGoalCard = (goal) => {
+            const { name, color } = getCategoryInfo(goal.category);
+            const goalCard = document.createElement('div');
+            goalCard.className = 'card goal-card p-5 rounded-xl';
+            goalCard.dataset.id = goal.id;
+            goalCard.draggable = true;
+            goalCard.setAttribute('role', 'option');
+            goalCard.setAttribute('aria-label', `View goal ${goal.title}`);
+            goalCard.innerHTML = `
+                <div class="flex items-start justify-between mb-2">
+                    <h3 class="text-lg font-semibold" style="color: #e5e7eb;">${goal.title}</h3>
+                    <span class="text-sm px-2 py-1 rounded-full ${color}">${name}</span>
+                </div>
+                <p class="goal-description text-sm mb-3" style="color: #9ca3af;">${goal.description || ''}</p>
+                <div class="progress-section">
+                    <div class="flex justify-between mb-1">
+                        <span class="text-sm font-medium text-blue-400">Progress</span>
+                        <span class="progress-text text-sm" style="color: #e5e7eb;">${goal.progress}%</span>
+                    </div>
+                    <div class="w-full bg-gray-600 rounded-full h-2.5" style="background-color: #4b5563;">
+                        <div class="progress-bar bg-blue-500 h-2.5 rounded-full" style="width: ${goal.progress}%"></div>
+                    </div>
+                    ${goal.category === 'finance' ? `<div class="finance-target text-xs mt-2" style="color: #9ca3af;">Current: ₹${formatCurrency(goal.currentAmount)} / ₹${formatCurrency(goal.targetAmount)}</div>` : ''}
+                </div>
+            `;
+            let isDragging = false;
+            goalCard.addEventListener('dragstart', (e) => {
+                isDragging = true;
+                goalCard.classList.add('dragging');
+                e.dataTransfer.setData('text/plain', goal.id);
+            });
+            goalCard.addEventListener('dragend', () => {
+                isDragging = false;
+                goalCard.classList.remove('dragging');
+                saveData('goals', goals);
+            });
+            goalCard.addEventListener('dragover', (e) => e.preventDefault());
+            goalCard.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const draggedId = e.dataTransfer.getData('text/plain');
+                const droppedId = goal.id;
+                const draggedGoal = goals.find(g => g.id === draggedId);
+                const droppedGoal = goals.find(g => g.id === droppedId);
+                const draggedIndex = goals.indexOf(draggedGoal);
+                const droppedIndex = goals.indexOf(droppedGoal);
+                goals.splice(draggedIndex, 1);
+                goals.splice(droppedIndex, 0, draggedGoal);
+                goals.forEach((g, index) => g.order = index);
+                renderGoals();
+                saveData('goals', goals);
+            });
+            goalCard.addEventListener('click', (e) => {
+                if (!isDragging) {
+                    e.preventDefault();
+                    openGoalDetail(goal.id);
+                }
+            });
+            goalCard.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+            goalCard.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openGoalDetail(goal.id);
+                }
+            });
+            return goalCard;
+        };
+        const renderGoals = () => {
+            if (!elements.goalsContainer || !elements.noGoalsMessage) return;
+            elements.goalsContainer.innerHTML = '';
+            goals.sort((a, b) => a.order - b.order);
+            goals.forEach(goal => {
+                if (goal) elements.goalsContainer.appendChild(renderGoalCard(goal));
+            });
+            if (goals.length > 0) {
+                const addMoreCard = document.createElement('div');
+                addMoreCard.className = 'card rounded-xl p-5 flex items-center justify-center';
+                addMoreCard.innerHTML = `<button id="addMoreGoalsBtn" class="btn btn-primary w-full h-full text-lg font-semibold">+ Add More Goals</button>`;
+                elements.goalsContainer.appendChild(addMoreCard);
+                setTimeout(() => {
+                    const addMoreGoalsBtn = document.getElementById('addMoreGoalsBtn');
+                    if (addMoreGoalsBtn) {
+                        addMoreGoalsBtn.addEventListener('click', () => openModal(
+                            elements.goalModal,
+                            elements.modalTitle,
+                            'Create New Goal',
+                            elements.submitGoalBtn,
+                            'Create Goal',
+                            elements.goalTitle
+                        ));
+                    }
+                }, 0);
+                elements.goalsContainer.classList.remove('hidden');
+                elements.noGoalsMessage.classList.add('hidden');
+            } else {
+                elements.goalsContainer.classList.add('hidden');
+                elements.noGoalsMessage.classList.remove('hidden');
+            }
+        };
+        const openGoalDetail = (id) => {
+            const goal = goals.find(g => g.id === id);
+            if (!goal || !elements.goalDetailModal || !elements.detailGoalTitle) return;
+            currentGoalId = id;
+            updateGoalDetailModal(goal);
+            elements.goalDetailModal.classList.remove('hidden');
+            elements.detailGoalTitle.focus();
+        };
+        const updateCategoryFields = (category) => {
+            if (elements.financeAmountField && elements.targetAmountInput) {
+                elements.financeAmountField.classList.toggle('hidden', category !== 'finance');
+                elements.targetAmountInput.toggleAttribute('required', category === 'finance');
+            }
+        };
+        // Event Listeners
+        const setupEventListeners = () => {
+            if (elements.goalCategorySelect) {
+                elements.goalCategorySelect.addEventListener('change', () => updateCategoryFields(elements.goalCategorySelect.value));
+            }
+            elements.tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    elements.tabBtns.forEach(b => {
+                        b.classList.remove('active', 'border-b-2', 'border-blue-400', 'text-blue-400');
+                        b.classList.add('text-gray-400');
+                        b.setAttribute('aria-selected', 'false');
+                    });
+                    btn.classList.add('active', 'border-b-2', 'border-blue-400', 'text-blue-400');
+                    btn.classList.remove('text-gray-400');
+                    btn.setAttribute('aria-selected', 'true');
+                    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+                    const targetTab = document.getElementById(btn.dataset.tab);
+                    if (targetTab) targetTab.classList.add('active');
+                });
+            });
+            if (elements.createFirstGoalBtn) {
+                elements.createFirstGoalBtn.addEventListener('click', () => openModal(
+                    elements.goalModal,
+                    elements.modalTitle,
+                    'Create New Goal',
+                    elements.submitGoalBtn,
+                    'Create Goal',
+                    elements.goalTitle
+                ));
+            }
+            if (elements.closeModalBtn) {
+                elements.closeModalBtn.addEventListener('click', () => closeModal(elements.goalModal, elements.goalForm, [elements.goalTitleError, elements.goalCategoryError, elements.targetAmountError]));
+            }
+            if (elements.cancelGoalBtn) {
+                elements.cancelGoalBtn.addEventListener('click', () => closeModal(elements.goalModal, elements.goalForm, [elements.goalTitleError, elements.goalCategoryError, elements.targetAmountError]));
+            }
+            if (elements.closeDetailModalBtn) {
+                elements.closeDetailModalBtn.addEventListener('click', () => closeModal(elements.goalDetailModal));
+            }
+            if (elements.editGoalBtn) {
+                elements.editGoalBtn.addEventListener('click', () => {
+                    const goal = goals.find(g => g.id === currentGoalId);
+                    if (!goal) return;
+                    closeModal(elements.goalDetailModal);
+                    openModal(elements.goalModal, elements.modalTitle, 'Edit Goal', elements.submitGoalBtn, 'Update Goal', elements.goalTitle);
+                    if (elements.editGoalId) elements.editGoalId.value = goal.id;
+                    if (elements.goalTitle) elements.goalTitle.value = goal.title;
+                    if (elements.goalDescription) elements.goalDescription.value = goal.description || '';
+                    if (elements.goalCategorySelect) elements.goalCategorySelect.value = goal.category;
+                    updateCategoryFields(goal.category);
+                    if (goal.category === 'finance' && elements.targetAmountInput) elements.targetAmountInput.value = goal.targetAmount || '';
+                });
+            }
+            if (elements.goalForm) {
+                elements.goalForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const fields = [
+                        { value: elements.goalTitle ? elements.goalTitle.value.trim() : '', errorElement: elements.goalTitleError, errorMessage: 'Goal title is required', validate: v => v },
+                        { value: elements.goalCategorySelect ? elements.goalCategorySelect.value : '', errorElement: elements.goalCategoryError, errorMessage: 'Please select a category', validate: v => v },
+                        { value: elements.targetAmountInput ? parseFloat(elements.targetAmountInput.value) : 0, errorElement: elements.targetAmountError, errorMessage: 'Please enter a valid target amount', validate: v => !elements.goalCategorySelect || elements.goalCategorySelect.value !== 'finance' || (!isNaN(v) && v > 0) }
+                    ];
+                    if (!validateForm(fields)) {
+                        alert('Please fill in all required fields correctly.');
+                        return;
+                    }
+                    const goal = {
+                        id: elements.editGoalId ? elements.editGoalId.value || database.ref('goals').push().key : database.ref('goals').push().key,
+                        title: elements.goalTitle ? elements.goalTitle.value.trim() : '',
+                        description: elements.goalDescription ? elements.goalDescription.value.trim() : '',
+                        category: elements.goalCategorySelect ? elements.goalCategorySelect.value : '',
+                        progress: 0,
+                        milestones: elements.editGoalId && elements.editGoalId.value ? (goals.find(g => g.id === elements.editGoalId.value)?.milestones || []) : [],
+                        targetAmount: elements.goalCategorySelect && elements.goalCategorySelect.value === 'finance' ? parseFloat(elements.targetAmountInput ? elements.targetAmountInput.value : 0) : null,
+                        currentAmount: elements.editGoalId && elements.editGoalId.value ? (goals.find(g => g.id === elements.editGoalId.value)?.currentAmount || 0) : 0,
+                        order: elements.editGoalId && elements.editGoalId.value ? (goals.find(g => g.id === elements.editGoalId.value)?.order || goals.length) : goals.length,
+                        createdAt: elements.editGoalId && elements.editGoalId.value ? (goals.find(g => g.id === elements.editGoalId.value)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
+                        progressHistory: elements.editGoalId && elements.editGoalId.value ? (goals.find(g => g.id === elements.editGoalId.value)?.progressHistory || []) : []
+                    };
+                    try {
+                        if (elements.editGoalId && elements.editGoalId.value) {
+                            const index = goals.findIndex(g => g.id === goal.id);
+                            goals[index] = sanitizeGoal(goal);
+                        } else {
+                            goals.push(sanitizeGoal(goal));
+                        }
+                        updateGoalProgress(goal);
+                        await saveData('goals', goals);
+                        renderGoals();
+                        closeModal(elements.goalModal, elements.goalForm, [elements.goalTitleError, elements.goalCategoryError, elements.targetAmountError]);
+                        alert(elements.editGoalId && elements.editGoalId.value ? 'Goal updated successfully!' : 'Goal created successfully!');
+                    } catch (error) {
+                        handleError(error, 'save goal');
+                    }
+                });
+            }
+            if (elements.addMilestoneBtn) {
+                elements.addMilestoneBtn.addEventListener('click', () => {
+                    const text = elements.newMilestoneInput ? elements.newMilestoneInput.value.trim() : '';
+                    if (!text) {
+                        alert('Please enter a milestone');
+                        return;
+                    }
+                    const goal = goals.find(g => g.id === currentGoalId);
+                    if (!goal) return;
+                    goal.milestones.push({
+                        id: goal.milestones.length > 0 ? Math.max(...goal.milestones.map(m => m.id)) + 1 : 1,
+                        text,
+                        completed: false
+                    });
+                    updateGoalProgress(goal);
+                    saveData('goals', goals);
+                    updateGoalDetailModal(goal);
+                    renderGoals();
+                    if (elements.newMilestoneInput) elements.newMilestoneInput.value = '';
+                });
+            }
+            if (elements.deleteGoalBtn) {
+                elements.deleteGoalBtn.addEventListener('click', async () => {
+                    if (confirm('Are you sure you want to delete this goal?')) {
+                        goals = goals.filter(g => g.id !== currentGoalId).map((g, index) => ({ ...g, order: index }));
+                        await database.ref(`goals/${currentGoalId}`).remove().catch(error => handleError(error, 'delete goal'));
+                        closeModal(elements.goalDetailModal);
+                        renderGoals();
+                    }
+                });
+            }
+            if (elements.currentAmountSlider) {
+                elements.currentAmountSlider.addEventListener('input', debounce(() => {
+                    const goal = goals.find(g => g.id === currentGoalId);
+                    if (!goal) return;
+                    goal.currentAmount = parseFloat(elements.currentAmountSlider.value);
+                    if (elements.currentAmountLabel) elements.currentAmountLabel.textContent = `₹${formatCurrency(goal.currentAmount)}`;
+                    if (elements.currentAmountInput) elements.currentAmountInput.value = goal.currentAmount;
+                    updateGoalProgress(goal);
+                    renderGoals();
+                    saveData('goals', goals);
+                }, 500));
+            }
+            if (elements.currentAmountInput) {
+                elements.currentAmountInput.addEventListener('input', debounce(() => {
+                    const goal = goals.find(g => g.id === currentGoalId);
+                    if (!goal) return;
+                    let value = parseFloat(elements.currentAmountInput.value);
+                    if (isNaN(value) || value < 0) value = 0;
+                    if (value > parseFloat(elements.currentAmountInput.max)) value = parseFloat(elements.currentAmountInput.max);
+                    goal.currentAmount = value;
+                    if (elements.currentAmountSlider) elements.currentAmountSlider.value = value;
+                    if (elements.currentAmountLabel) elements.currentAmountLabel.textContent = `₹${formatCurrency(goal.currentAmount)}`;
+                    updateGoalProgress(goal);
+                    renderGoals();
+                    saveData('goals', goals);
+                }, 500));
+            }
+        };
+        // Initialization
+        const init = async () => {
+            await loadData('goals', goals, (goal) => {
+                goal.milestones = goal.milestones || [];
+                goal.order = Number(goal.order) || 0;
+                goal.progressHistory = goal.progressHistory || [];
+                updateGoalProgress(goal);
+            });
+            renderGoals();
+            setupEventListeners();
+        };
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
 </body>
 </html>
