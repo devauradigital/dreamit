@@ -170,7 +170,6 @@
             <div class="flex justify-between items-center">
                 <div>
                     <img src="navbarlogo.png" alt="Goal Tracker Logo" class="h-10 w-auto">
-                    <p class="text-xl text-gray-200 mt-2">Hi, Akshat <span class="wave-hand">👋</span></p>
                 </div>
             </div>
             <p class="text-gray-300 mt-2">Your companion for reaching your goals</p>
@@ -178,8 +177,6 @@
         <nav class="mb-8 border-b" style="border-color: #4b5563;">
             <ul class="nav-tabs flex space-x-4 sm:space-x-8 overflow-x-auto md:overflow-visible">
                 <li><button class="tab-btn active py-2 px-1 border-b-2 border-blue-400 text-blue-400 text-sm sm:text-base" data-tab="dashboard" aria-selected="true">Dashboard</button></li>
-                <li><button class="tab-btn py-2 px-1 hover:text-blue-400 text-sm sm:text-base" data-tab="analytics" aria-selected="false">Analytics</button></li>
-                <li><button class="tab-btn py-2 px-1 hover:text-blue-400 text-sm sm:text-base" data-tab="settings" aria-selected="false">Settings</button></li>
             </ul>
         </nav>
         <div id="dashboard" class="tab-content active">
@@ -192,46 +189,6 @@
                 <h3 class="text-xl font-semibold text-gray-200">No goals yet</h3>
                 <p class="text-gray-400 mb-4">Create your first goal to begin your journey.</p>
                 <button id="createFirstGoalBtn" class="btn btn-primary">Create Your First Goal</button>
-            </div>
-        </div>
-        <div id="analytics" class="tab-content">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="card p-6 rounded-xl">
-                    <h3 class="text-lg font-semibold mb-4" style="color: #e5e7eb;">Goal Completion Rates</h3>
-                    <div class="chart-container">
-                        <canvas id="completionChart" aria-label="Goal Completion Rates Bar Chart"></canvas>
-                    </div>
-                </div>
-                <div class="card p-6 rounded-xl">
-                    <h3 class="text-lg font-semibold mb-4" style="color: #e5e7eb;">Goal Category Distribution</h3>
-                    <div class="chart-container">
-                        <canvas id="categoryPieChart" aria-label="Goal Category Distribution Pie Chart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div id="settings" class="tab-content">
-            <div class="card p-6 rounded-xl mb-6">
-                <h3 class="text-lg font-semibold mb-4" style="color: #e5e7eb;">Reminders</h3>
-                <div class="mb-4">
-                    <label for="reminderGoal" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Select Goal</label>
-                    <select id="reminderGoal" class="select-field" aria-describedby="reminderGoalError">
-                        <option value="">Select a Goal</option>
-                    </select>
-                    <p id="reminderGoalError" class="error-message">Please select a goal</p>
-                </div>
-                <div class="mb-4">
-                    <label for="reminderMessage" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Reminder Message</label>
-                    <input type="text" id="reminderMessage" class="input-field" placeholder="Enter reminder message" aria-describedby="reminderMessageError">
-                    <p id="reminderMessageError" class="error-message">Please enter a reminder message</p>
-                </div>
-                <div class="mb-4">
-                    <label for="reminderTime" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Reminder Time (24-hour format, device local time)</label>
-                    <input type="time" id="reminderTime" class="input-field" aria-describedby="reminderTimeError">
-                    <p id="reminderTimeError" class="error-message">Please select a valid time</p>
-                </div>
-                <button id="createReminderBtn" class="btn btn-primary">Create Reminder</button>
-                <div id="remindersList" class="mt-4 space-y-2"></div>
             </div>
         </div>
         <div id="goalModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" role="dialog" aria-labelledby="modalTitle">
@@ -259,10 +216,10 @@
                         <label for="goalCategory" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Category</label>
                         <select id="goalCategory" class="select-field" required aria-describedby="goalCategoryError">
                             <option value="">Select Category</option>
-                            <option value="health">🏋️Health</option>
-                            <option value="career">💰Career</option>
-                            <option value="finance">💼Finance</option>
-                            <option value="personal">🚀Personal Growth</option>
+                            <option value="health">Health</option>
+                            <option value="career">Career</option>
+                            <option value="finance">Finance</option>
+                            <option value="personal">Personal Growth</option>
                         </select>
                         <p id="goalCategoryError" class="error-message">Please select a category</p>
                     </div>
@@ -337,42 +294,6 @@
                 </div>
             </div>
         </div>
-        <div id="editReminderModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" role="dialog" aria-labelledby="editReminderTitle">
-            <div class="card rounded-xl p-6 w-full max-w-md mx-4">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 id="editReminderTitle" class="text-xl font-semibold" style="color: #e5e7eb;">Edit Reminder</h3>
-                    <button id="closeEditReminderModalBtn" class="text-gray-400 hover:text-gray-200" aria-label="Close modal">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-                <form id="editReminderForm">
-                    <input type="hidden" id="editReminderId">
-                    <div class="mb-4">
-                        <label for="editReminderGoal" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Select Goal</label>
-                        <select id="editReminderGoal" class="select-field" aria-describedby="editReminderGoalError">
-                            <option value="">Select a Goal</option>
-                        </select>
-                        <p id="editReminderGoalError" class="error-message">Please select a goal</p>
-                    </div>
-                    <div class="mb-4">
-                        <label for="editReminderMessage" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Reminder Message</label>
-                        <input type="text" id="editReminderMessage" class="input-field" placeholder="Enter reminder message" aria-describedby="editReminderMessageError">
-                        <p id="editReminderMessageError" class="error-message">Please enter a reminder message</p>
-                    </div>
-                    <div class="mb-4">
-                        <label for="editReminderTime" class="block text-sm font-medium mb-1" style="color: #9ca3af;">Reminder Time</label>
-                        <input type="time" id="editReminderTime" class="input-field" aria-describedby="editReminderTimeError">
-                        <p id="editReminderTimeError" class="error-message">Please select a valid time</p>
-                    </div>
-                    <div class="flex justify-end space-x-3">
-                        <button type="button" id="cancelEditReminderBtn" class="btn btn-secondary">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Update Reminder</button>
-                    </div>
-                </form>
-            </div>
-        </div>
         <footer class="mt-10 py-4 text-center text-gray-400">
             <p>Powered By <a href="https://devauradigital.com" target="_blank" class="text-blue-400 hover:text-blue-500 transition">Devaura Digital</a></p>
         </footer>
@@ -398,22 +319,16 @@
         }
         const elements = {
             dashboardTab: document.getElementById('dashboard'),
-            analyticsTab: document.getElementById('analytics'),
-            settingsTab: document.getElementById('settings'),
             tabBtns: document.querySelectorAll('.tab-btn'),
             goalsContainer: document.getElementById('goalsContainer'),
             noGoalsMessage: document.getElementById('noGoalsMessage'),
             goalModal: document.getElementById('goalModal'),
             goalDetailModal: document.getElementById('goalDetailModal'),
-            editReminderModal: document.getElementById('editReminderModal'),
             goalForm: document.getElementById('goalForm'),
-            editReminderForm: document.getElementById('editReminderForm'),
             createFirstGoalBtn: document.getElementById('createFirstGoalBtn'),
             closeModalBtn: document.getElementById('closeModalBtn'),
             cancelGoalBtn: document.getElementById('cancelGoalBtn'),
             closeDetailModalBtn: document.getElementById('closeDetailModalBtn'),
-            closeEditReminderModalBtn: document.getElementById('closeEditReminderModalBtn'),
-            cancelEditReminderBtn: document.getElementById('cancelEditReminderBtn'),
             editGoalBtn: document.getElementById('editGoalBtn'),
             deleteGoalBtn: document.getElementById('deleteGoalBtn'),
             addMilestoneBtn: document.getElementById('addMilestoneBtn'),
@@ -440,33 +355,13 @@
             detailGoalTitle: document.getElementById('detailGoalTitle'),
             detailCategory: document.getElementById('detailCategory'),
             milestonesList: document.getElementById('milestonesList'),
-            completionChart: document.getElementById('completionChart'),
-            categoryPieChart: document.getElementById('categoryPieChart'),
             goalTitleError: document.getElementById('goalTitleError'),
             goalCategoryError: document.getElementById('goalCategoryError'),
             targetAmountError: document.getElementById('targetAmountError'),
-            reminderGoal: document.getElementById('reminderGoal'),
-            reminderMessage: document.getElementById('reminderMessage'),
-            reminderTime: document.getElementById('reminderTime'),
-            createReminderBtn: document.getElementById('createReminderBtn'),
-            remindersList: document.getElementById('remindersList'),
-            reminderGoalError: document.getElementById('reminderGoalError'),
-            reminderMessageError: document.getElementById('reminderMessageError'),
-            reminderTimeError: document.getElementById('reminderTimeError'),
-            editReminderGoal: document.getElementById('editReminderGoal'),
-            editReminderMessage: document.getElementById('editReminderMessage'),
-            editReminderTime: document.getElementById('editReminderTime'),
-            editReminderId: document.getElementById('editReminderId'),
-            editReminderGoalError: document.getElementById('editReminderGoalError'),
-            editReminderMessageError: document.getElementById('editReminderMessageError'),
-            editReminderTimeError: document.getElementById('editReminderTimeError'),
             loadingSpinner: document.getElementById('loadingSpinner')
         };
         let goals = [];
-        let reminders = [];
         let currentGoalId = null;
-        let completionChart;
-        let categoryPieChart;
         // Utility Functions
         const formatCurrency = (amount) => isNaN(amount) ? '0' : amount.toLocaleString('en-IN');
         const getCategoryInfo = (category) => ({
@@ -497,26 +392,6 @@
             createdAt: goal.createdAt || new Date().toISOString(),
             progressHistory: goal.progressHistory || []
         });
-        const showNotification = async (title, message) => {
-            if ('Notification' in window && Notification.permission === 'granted') {
-                try {
-                    await new Notification(title, { body: message, icon: '/navbarlogo.png' });
-                } catch (error) {
-                    console.error('Notification error:', error);
-                    alert(message); // Fallback to alert
-                }
-            } else if ('serviceWorker' in navigator && 'PushManager' in window) {
-                try {
-                    const registration = await navigator.serviceWorker.ready;
-                    await registration.showNotification(title, { body: message, icon: '/navbarlogo.png' });
-                } catch (error) {
-                    console.error('Service worker notification error:', error);
-                    alert(message); // Fallback to alert
-                }
-            } else {
-                alert(message); // Fallback to alert
-            }
-        };
         const handleError = (error, action) => {
             console.error(`Error ${action}:`, error);
             let message = `Failed to ${action}. `;
@@ -558,7 +433,7 @@
             const updates = {};
             data.forEach((item, index) => {
                 const sanitizedItem = { ...item };
-                delete sanitizedItem.timer; // Ensure client-side timers are not saved
+                delete sanitizedItem.timer;
                 delete sanitizedItem.intervalTimer;
                 updates[`${path}/${item.id}`] = { ...sanitizedItem, order: index };
             });
@@ -581,110 +456,6 @@
             } finally {
                 if (elements.loadingSpinner) elements.loadingSpinner.classList.add('hidden');
             }
-        };
-        // Reminder Functions
-        const scheduleReminder = (reminder) => {
-            const now = new Date();
-            const [hour, minute] = reminder.time.split(':').map(Number);
-            let reminderTime = new Date();
-            reminderTime.setHours(hour, minute, 0, 0);
-            if (reminderTime <= now) reminderTime.setDate(reminderTime.getDate() + 1);
-            const msUntilReminder = reminderTime - now;
-            if (reminder.timer) clearTimeout(reminder.timer);
-            if (reminder.intervalTimer) clearInterval(reminder.intervalTimer);
-            reminder.timer = setTimeout(() => {
-                const goal = goals.find(g => g.id === reminder.goalId);
-                if (goal) {
-                    showNotification('Goal Tracker Reminder', `${reminder.message} (Goal: ${goal.title}, Progress: ${goal.progress}%)`);
-                    reminder.intervalTimer = setInterval(() => {
-                        if (goal) {
-                            showNotification('Goal Tracker Reminder', `${reminder.message} (Goal: ${goal.title}, Progress: ${goal.progress}%)`);
-                        }
-                    }, 24 * 60 * 60 * 1000);
-                } else {
-                    console.warn(`Skipping reminder ${reminder.id}: Goal ${reminder.goalId} not found`);
-                }
-            }, msUntilReminder);
-        };
-        const updateReminderGoalOptions = (selectElement) => {
-            if (!selectElement) return;
-            selectElement.innerHTML = '<option value="">Select a Goal</option>';
-            goals.forEach(goal => {
-                const option = document.createElement('option');
-                option.value = goal.id;
-                option.textContent = goal.title;
-                selectElement.appendChild(option);
-            });
-        };
-        const renderReminders = () => {
-            if (!elements.remindersList) return;
-            elements.remindersList.innerHTML = '';
-            const validReminders = reminders.filter(reminder => {
-                const goalExists = goals.some(g => g.id === reminder.goalId);
-                if (!goalExists) {
-                    console.warn(`Skipping reminder ${reminder.id}: Goal ${reminder.goalId} not found`);
-                    return false;
-                }
-                return true;
-            });
-            validReminders.forEach(reminder => {
-                const goal = goals.find(g => g.id === reminder.goalId);
-                if (!goal) return;
-                const reminderItem = document.createElement('div');
-                reminderItem.className = 'flex items-center justify-between';
-                reminderItem.innerHTML = `
-                    <div>
-                        <p class="text-sm" style="color: #e5e7eb;">${reminder.message}</p>
-                        <p class="text-sm" style="color: #9ca3af;">Goal: ${goal.title} | Time: ${reminder.time}</p>
-                    </div>
-                    <div class="flex space-x-2">
-                        <button class="edit-reminder-btn text-blue-400" data-id="${reminder.id}" title="Edit reminder" aria-label="Edit reminder">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                        </button>
-                        <button class="delete-reminder-btn text-red-400" data-id="${reminder.id}" aria-label="Delete reminder">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-                `;
-                elements.remindersList.appendChild(reminderItem);
-            });
-            document.querySelectorAll('.edit-reminder-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const reminder = reminders.find(n => n.id === parseInt(btn.dataset.id));
-                    if (reminder) {
-                        openModal(
-                            elements.editReminderModal,
-                            elements.editReminderTitle,
-                            'Edit Reminder',
-                            elements.editReminderForm.querySelector('button[type="submit"]'),
-                            'Update Reminder',
-                            elements.editReminderGoal
-                        );
-                        elements.editReminderId.value = reminder.id;
-                        elements.editReminderGoal.value = reminder.goalId;
-                        elements.editReminderMessage.value = reminder.message;
-                        elements.editReminderTime.value = reminder.time;
-                        updateReminderGoalOptions(elements.editReminderGoal);
-                    }
-                });
-            });
-            document.querySelectorAll('.delete-reminder-btn').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    const id = parseInt(btn.dataset.id);
-                    const reminder = reminders.find(n => n.id === id);
-                    if (reminder) {
-                        if (reminder.timer) clearTimeout(reminder.timer);
-                        if (reminder.intervalTimer) clearInterval(reminder.intervalTimer);
-                        reminders = reminders.filter(n => n.id !== id);
-                        await database.ref(`reminders/${id}`).remove().catch(error => handleError(error, 'remove reminder'));
-                        renderReminders();
-                    }
-                });
-            });
         };
         // Goal Functions
         const updateGoalProgress = (goal) => {
@@ -770,7 +541,6 @@
                                 updateGoalProgress(goal);
                                 saveData('goals', goals);
                                 renderGoals();
-                                updateCharts();
                             });
                         }
                         const editBtn = milestoneItem.querySelector('.edit-milestone-btn');
@@ -903,95 +673,6 @@
                 elements.targetAmountInput.toggleAttribute('required', category === 'finance');
             }
         };
-        // Chart Functions
-        const initializeCharts = () => {
-            if (!window.Chart) {
-                console.error('Chart.js is not loaded');
-                alert('Failed to load charts. Please check your internet connection and try again.');
-                return;
-            }
-            if (!elements.completionChart || !elements.categoryPieChart) {
-                console.error('Cannot initialize charts: Canvas elements not found');
-                alert('Chart elements are missing. Please check the page structure.');
-                return;
-            }
-            completionChart = new Chart(elements.completionChart.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: ['Completed', 'In Progress', 'Not Started'],
-                    datasets: [{
-                        label: 'Goals',
-                        data: [0, 0, 0],
-                        backgroundColor: ['rgba(59, 130, 246, 0.6)', 'rgba(234, 179, 8, 0.6)', 'rgba(239, 68, 68, 0.6)'],
-                        borderColor: ['rgba(59, 130, 246, 1)', 'rgba(234, 179, 8, 1)', 'rgba(239, 68, 68, 1)'],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: true, ticks: { precision: 0, color: '#e5e7eb' }, grid: { color: '#4b5563' } },
-                        x: { ticks: { color: '#e5e7eb' }, grid: { color: '#4b5563' } }
-                    },
-                    plugins: {
-                        legend: { labels: { color: '#e5e7eb' } },
-                        title: { display: true, text: 'Goal Completion Status', color: '#e5e7eb' }
-                    }
-                }
-            });
-            categoryPieChart = new Chart(elements.categoryPieChart.getContext('2d'), {
-                type: 'pie',
-                data: {
-                    labels: ['Health', 'Career', 'Finance', 'Personal Growth'],
-                    datasets: [{
-                        label: 'Goals by Category',
-                        data: [0, 0, 0, 0],
-                        backgroundColor: [
-                            'rgba(34, 197, 94, 0.6)',
-                            'rgba(168, 85, 247, 0.6)',
-                            'rgba(59, 130, 246, 0.6)',
-                            'rgba(236, 72, 153, 0.6)'
-                        ],
-                        borderColor: [
-                            'rgba(34, 197, 94, 1)',
-                            'rgba(168, 85, 247, 1)',
-                            'rgba(59, 130, 246, 1)',
-                            'rgba(236, 72, 153, 1)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { labels: { color: '#e5e7eb' } },
-                        title: { display: true, text: 'Goals by Category', color: '#e5e7eb' }
-                    }
-                }
-            });
-            updateCharts();
-        };
-        const updateCharts = () => {
-            if (completionChart) {
-                completionChart.data.datasets[0].data = [
-                    goals.filter(g => g.progress === 100).length,
-                    goals.filter(g => g.progress > 0 && g.progress < 100).length,
-                    goals.filter(g => g.progress === 0).length
-                ];
-                completionChart.update();
-            }
-            if (categoryPieChart) {
-                categoryPieChart.data.datasets[0].data = [
-                    goals.filter(g => g.category === 'health').length,
-                    goals.filter(g => g.category === 'career').length,
-                    goals.filter(g => g.category === 'finance').length,
-                    goals.filter(g => g.category === 'personal').length
-                ];
-                categoryPieChart.update();
-            }
-        };
         // Event Listeners
         const setupEventListeners = () => {
             if (elements.goalCategorySelect) {
@@ -1010,8 +691,6 @@
                     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
                     const targetTab = document.getElementById(btn.dataset.tab);
                     if (targetTab) targetTab.classList.add('active');
-                    if (btn.dataset.tab === 'analytics') updateCharts();
-                    if (btn.dataset.tab === 'settings') renderReminders();
                 });
             });
             if (elements.createFirstGoalBtn) {
@@ -1032,12 +711,6 @@
             }
             if (elements.closeDetailModalBtn) {
                 elements.closeDetailModalBtn.addEventListener('click', () => closeModal(elements.goalDetailModal));
-            }
-            if (elements.closeEditReminderModalBtn) {
-                elements.closeEditReminderModalBtn.addEventListener('click', () => closeModal(elements.editReminderModal, elements.editReminderForm, [elements.editReminderGoalError, elements.editReminderMessageError, elements.editReminderTimeError]));
-            }
-            if (elements.cancelEditReminderBtn) {
-                elements.cancelEditReminderBtn.addEventListener('click', () => closeModal(elements.editReminderModal, elements.editReminderForm, [elements.editReminderGoalError, elements.editReminderMessageError, elements.editReminderTimeError]));
             }
             if (elements.editGoalBtn) {
                 elements.editGoalBtn.addEventListener('click', () => {
@@ -1088,57 +761,10 @@
                         updateGoalProgress(goal);
                         await saveData('goals', goals);
                         renderGoals();
-                        updateCharts();
-                        updateReminderGoalOptions(elements.reminderGoal);
-                        updateReminderGoalOptions(elements.editReminderGoal);
                         closeModal(elements.goalModal, elements.goalForm, [elements.goalTitleError, elements.goalCategoryError, elements.targetAmountError]);
                         alert(elements.editGoalId && elements.editGoalId.value ? 'Goal updated successfully!' : 'Goal created successfully!');
                     } catch (error) {
                         handleError(error, 'save goal');
-                    }
-                });
-            }
-            if (elements.editReminderForm) {
-                elements.editReminderForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const fields = [
-                        { value: elements.editReminderGoal ? elements.editReminderGoal.value : '', errorElement: elements.editReminderGoalError, errorMessage: 'Please select a goal', validate: v => v },
-                        { value: elements.editReminderMessage ? elements.editReminderMessage.value.trim() : '', errorElement: elements.editReminderMessageError, errorMessage: 'Please enter a reminder message', validate: v => v },
-                        { value: elements.editReminderTime ? elements.editReminderTime.value : '', errorElement: elements.editReminderTimeError, errorMessage: 'Please select a valid time', validate: v => {
-                            const [hour, minute] = v.split(':').map(Number);
-                            return !isNaN(hour) && !isNaN(minute);
-                        }}
-                    ];
-                    if (!validateForm(fields)) {
-                        alert('Please fill in all required fields correctly.');
-                        return;
-                    }
-                    const id = parseInt(elements.editReminderId ? elements.editReminderId.value : 0);
-                    const reminderIndex = reminders.findIndex(n => n.id === id);
-                    if (reminderIndex === -1) {
-                        alert('Reminder not found.');
-                        return;
-                    }
-                    const [hour, minute] = (elements.editReminderTime ? elements.editReminderTime.value : '00:00').split(':').map(Number);
-                    const formattedTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-                    const oldReminder = reminders[reminderIndex];
-                    if (oldReminder.timer) clearTimeout(oldReminder.timer);
-                    if (oldReminder.intervalTimer) clearInterval(oldReminder.intervalTimer);
-                    reminders[reminderIndex] = {
-                        id: id,
-                        goalId: elements.editReminderGoal ? elements.editReminderGoal.value : '',
-                        message: elements.editReminderMessage ? elements.editReminderMessage.value.trim() : '',
-                        time: formattedTime,
-                        order: oldReminder.order
-                    };
-                    scheduleReminder(reminders[reminderIndex]);
-                    try {
-                        await saveData('reminders', reminders);
-                        renderReminders();
-                        closeModal(elements.editReminderModal, elements.editReminderForm, [elements.editReminderGoalError, elements.editReminderMessageError, elements.editReminderTimeError]);
-                        alert('Reminder updated successfully!');
-                    } catch (error) {
-                        handleError(error, 'update reminder');
                     }
                 });
             }
@@ -1160,61 +786,17 @@
                     saveData('goals', goals);
                     updateGoalDetailModal(goal);
                     renderGoals();
-                    updateCharts();
                     if (elements.newMilestoneInput) elements.newMilestoneInput.value = '';
                 });
             }
             if (elements.deleteGoalBtn) {
                 elements.deleteGoalBtn.addEventListener('click', async () => {
                     if (confirm('Are you sure you want to delete this goal?')) {
-                        reminders = reminders.filter(n => n.goalId !== currentGoalId).map((n, index) => {
-                            if (n.timer) clearTimeout(n.timer);
-                            if (n.intervalTimer) clearInterval(n.intervalTimer);
-                            return { ...n, order: index };
-                        });
-                        await saveData('reminders', reminders);
                         goals = goals.filter(g => g.id !== currentGoalId).map((g, index) => ({ ...g, order: index }));
                         await database.ref(`goals/${currentGoalId}`).remove().catch(error => handleError(error, 'delete goal'));
                         closeModal(elements.goalDetailModal);
                         renderGoals();
-                        updateCharts();
-                        updateReminderGoalOptions(elements.reminderGoal);
-                        updateReminderGoalOptions(elements.editReminderGoal);
-                        renderReminders();
                     }
-                });
-            }
-            if (elements.createReminderBtn) {
-                elements.createReminderBtn.addEventListener('click', async () => {
-                    const fields = [
-                        { value: elements.reminderGoal ? elements.reminderGoal.value : '', errorElement: elements.reminderGoalError, errorMessage: 'Please select a goal', validate: v => v },
-                        { value: elements.reminderMessage ? elements.reminderMessage.value.trim() : '', errorElement: elements.reminderMessageError, errorMessage: 'Please enter a reminder message', validate: v => v },
-                        { value: elements.reminderTime ? elements.reminderTime.value : '', errorElement: elements.reminderTimeError, errorMessage: 'Please select a valid time', validate: v => {
-                            const [hour, minute] = v.split(':').map(Number);
-                            return !isNaN(hour) && !isNaN(minute);
-                        }}
-                    ];
-                    if (!validateForm(fields)) {
-                        alert('Please fill in all required fields correctly.');
-                        return;
-                    }
-                    const [hour, minute] = (elements.reminderTime ? elements.reminderTime.value : '00:00').split(':').map(Number);
-                    const formattedTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-                    const reminder = {
-                        id: reminders.length > 0 ? Math.max(...reminders.map(n => n.id)) + 1 : 1,
-                        goalId: elements.reminderGoal ? elements.reminderGoal.value : '',
-                        message: elements.reminderMessage ? elements.reminderMessage.value.trim() : '',
-                        time: formattedTime,
-                        order: reminders.length
-                    };
-                    reminders.push(reminder);
-                    scheduleReminder(reminder);
-                    await saveData('reminders', reminders);
-                    renderReminders();
-                    if (elements.reminderGoal) elements.reminderGoal.value = '';
-                    if (elements.reminderMessage) elements.reminderMessage.value = '';
-                    if (elements.reminderTime) elements.reminderTime.value = '';
-                    alert('Reminder created!');
                 });
             }
             if (elements.currentAmountSlider) {
@@ -1226,7 +808,6 @@
                     if (elements.currentAmountInput) elements.currentAmountInput.value = goal.currentAmount;
                     updateGoalProgress(goal);
                     renderGoals();
-                    updateCharts();
                     saveData('goals', goals);
                 }, 500));
             }
@@ -1242,64 +823,20 @@
                     if (elements.currentAmountLabel) elements.currentAmountLabel.textContent = `₹${formatCurrency(goal.currentAmount)}`;
                     updateGoalProgress(goal);
                     renderGoals();
-                    updateCharts();
                     saveData('goals', goals);
                 }, 500));
             }
-            [elements.reminderTime, elements.editReminderTime].forEach(timeInput => {
-                if (timeInput) {
-                    timeInput.addEventListener('input', () => {
-                        const time = timeInput.value;
-                        if (time) {
-                            const [hour, minute] = time.split(':').map(Number);
-                            if (!isNaN(hour) && !isNaN(minute)) {
-                                timeInput.value = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-                            }
-                        }
-                    });
-                }
-            });
         };
         // Initialization
         const init = async () => {
-            // Load goals first
             await loadData('goals', goals, (goal) => {
                 goal.milestones = goal.milestones || [];
                 goal.order = Number(goal.order) || 0;
                 goal.progressHistory = goal.progressHistory || [];
                 updateGoalProgress(goal);
             });
-            // Load reminders and clean up orphaned ones
-            await loadData('reminders', reminders, (reminder) => {
-                if (goals.some(g => g.id === reminder.goalId)) {
-                    scheduleReminder(reminder);
-                } else {
-                    console.warn(`Removing orphaned reminder ${reminder.id} for non-existent goal ${reminder.goalId}`);
-                    database.ref(`reminders/${reminder.id}`).remove().catch(error => handleError(error, 'remove orphaned reminder'));
-                }
-            });
-            // Filter out invalid reminders
-            reminders = reminders.filter(reminder => goals.some(g => g.id === reminder.goalId));
             renderGoals();
-            updateCharts();
-            updateReminderGoalOptions(elements.reminderGoal);
-            updateReminderGoalOptions(elements.editReminderGoal);
-            renderReminders();
-            initializeCharts();
             setupEventListeners();
-            if ('Notification' in window) {
-                Notification.requestPermission().catch(error => {
-                    console.error('Error requesting notification permission:', error);
-                    alert('Failed to request notification permission. Using alerts instead.');
-                });
-            }
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js').then(registration => {
-                    console.log('Service Worker registered with scope:', registration.scope);
-                }).catch(error => {
-                    console.error('Service Worker registration failed:', error);
-                });
-            }
         };
         document.addEventListener('DOMContentLoaded', init);
     </script>
