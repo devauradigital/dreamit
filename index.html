@@ -16,6 +16,35 @@
 
     <link rel="manifest" href="/site.webmanifest">
     <link rel="apple-touch-icon" href="/navbarlogo.png">
+    
+    <!-- Service Worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js')
+            .catch(err => console.error('SW failed:', err));
+        });
+      }
+
+      // Optional: Manual install button
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', e => {
+        e.preventDefault();
+        deferredPrompt = e;
+        const btn = document.createElement('button');
+        btn.textContent = 'Install App';
+        btn.className = 'fixed bottom-4 right-4 z-50 btn btn-primary text-sm px-4 py-2';
+        btn.onclick = () => {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then(() => {
+            btn.remove();
+            deferredPrompt = null;
+          });
+        };
+        document.body.appendChild(btn);
+      });
+    </script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -1141,4 +1170,5 @@
     </script>
 </body>
 </html>
+
 
