@@ -8,16 +8,17 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/dreamit/navbarlogo.png",
+      "src": "/dreamit/logo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/dreamit/navbarlogo.png",
+      "src": "/dreamit/logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ]
 }
+
