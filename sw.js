@@ -1,103 +1,92 @@
-const CACHE_NAME = 'goal-tracker-v2'; // Updated cache name to force update
-const urlsToCache = [
+/* service-worker.js */
+const CACHE_NAME = 'goal-tracker-v2';          // bump this when you deploy
+const ASSETS = [
   '/',
   '/index.html',
   '/navbarlogo.png',
   '/no_goal.png',
+  '/icon-192.png',
+  '/icon-512.png',
   '/apple-touch-icon.png',
-  '/site.webmanifest',
+  '/manifest.json',
+  // CDN assets – they will be cached on first load
   'https://cdn.tailwindcss.com',
+  'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
   'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js',
-  'https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js',
-  'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js'
+  'https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js'
 ];
 
-self.addEventListener('install', event => {
-  console.log('Service Worker: Installing...');
-  event.waitUntil(
+/* ---------- INSTALL ---------- */
+self.addEventListener('install', e => {
+  e.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Service Worker: Caching files');
-        return cache.addAll(urlsToCache).catch(error => {
-          console.error('Service Worker: Cache addAll failed:', error);
-          throw error;
-        });
-      })
-      .then(() => {
-        console.log('Service Worker: Installation complete');
-        return self.skipWaiting();
-      })
+      .then(cache => cache.addAll(ASSETS))
+      .then(() => self.skipWaiting())
   );
 });
 
-self.addEventListener('activate', event => {
-  console.log('Service Worker: Activating...');
-  const cacheWhitelist = [CACHE_NAME];
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (!cacheWhitelist.includes(cacheName)) {
-            console.log('Service Worker: Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
+/* ---------- ACTIVATE ---------- */
+self.addEventListener('activate', e => {
+  const whitelist = [CACHE_NAME];
+  e.waitUntil(
+    caches.keys().then(names =>
+      Promise.all(
+        names.map(name => {
+          if (!whitelist.includes(name)) return caches.delete(name);
         })
-      );
-    }).then(() => {
-      console.log('Service Worker: Activation complete');
-      return self.clients.claim();
+      )
+    ).then(() => self.clients.claim())
+  );
+});
+
+/* ---------- FETCH ---------- */
+self.addEventListener('fetch', e => {
+  // Only cache GET requests
+  if (e.request.method !== 'GET') return;
+
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+
+      // Network-first for everything else
+      return fetch(e.request).then(networkResponse => {
+        // Cache successful responses (2xx)
+        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+          return networkResponse;
+        }
+        const clone = networkResponse.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+        return networkResponse;
+      });
+    }).catch(() => {
+      // Optional: offline fallback page
+      // return caches.match('/offline.html');
     })
   );
 });
 
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) {
-          console.log('Service Worker: Serving from cache:', event.request.url);
-          return response;
-        }
-        console.log('Service Worker: Fetching from network:', event.request.url);
-        return fetch(event.request).catch(error => {
-          console.error('Service Worker: Fetch failed:', error);
-          throw error;
-        });
-      })
-  );
-});
-
-self.addEventListener('push', event => {
-  console.log('Service Worker: Push event received');
-  const data = event.data ? event.data.json() : { title: 'Goal Tracker Reminder', body: 'Time to check your goals!' };
-  event.waitUntil(
+/* ---------- PUSH (optional) ---------- */
+self.addEventListener('push', e => {
+  const data = e.data ? e.data.json() : { title: 'Dreamit', body: 'Time to check your goals!' };
+  e.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: '/navbarlogo.png',
-      badge: '/navbarlogo.png'
-    }).catch(error => {
-      console.error('Service Worker: Notification failed:', error);
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      tag: 'goal-reminder'
     })
   );
 });
 
-self.addEventListener('notificationclick', event => {
-  console.log('Service Worker: Notification clicked');
-  event.notification.close();
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-      for (const client of clientList) {
-        if (client.url.includes('index.html') && 'focus' in client) {
-          console.log('Service Worker: Focusing existing window');
-          return client.focus();
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then(list => {
+        for (const c of list) {
+          if (c.url.includes('index.html') && 'focus' in c) return c.focus();
         }
-      }
-      if (clients.openWindow) {
-        console.log('Service Worker: Opening new window');
-        return clients.openWindow('/');
-      }
-    }).catch(error => {
-      console.error('Service Worker: Notification click handling failed:', error);
-    })
+        if (clients.openWindow) return clients.openWindow('/');
+      })
   );
 });
