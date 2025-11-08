@@ -11,7 +11,6 @@ const urlsToCache = [
   'https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js',
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js'
 ];
-
 self.addEventListener('install', event => {
   console.log('Service Worker: Installing...');
   event.waitUntil(
@@ -29,7 +28,6 @@ self.addEventListener('install', event => {
       })
   );
 });
-
 self.addEventListener('activate', event => {
   console.log('Service Worker: Activating...');
   const cacheWhitelist = [CACHE_NAME];
@@ -49,7 +47,6 @@ self.addEventListener('activate', event => {
     })
   );
 });
-
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
@@ -66,7 +63,6 @@ self.addEventListener('fetch', event => {
       })
   );
 });
-
 self.addEventListener('push', event => {
   console.log('Service Worker: Push event received');
   const data = event.data ? event.data.json() : { title: 'Goal Tracker Reminder', body: 'Time to check your goals!' };
@@ -80,7 +76,6 @@ self.addEventListener('push', event => {
     })
   );
 });
-
 self.addEventListener('notificationclick', event => {
   console.log('Service Worker: Notification clicked');
   event.notification.close();
