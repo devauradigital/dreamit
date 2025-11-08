@@ -7,16 +7,16 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Dreamit">
-    
+   
     <title>Dreamit</title>
     <link rel="manifest" href="/dreamit/site.webmanifest">
-    <link rel="apple-touch-icon" href="/navbarlogo.png">
+    <link rel="apple-touch-icon" href="/dreamit/navbarlogo.png">
     <script src="https://cdn.tailwindcss.com"></script>
-    
+   
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    
+   
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
         body {
@@ -151,18 +151,16 @@
         }
     </style>
 </head>
-
 <body class="min-h-screen">
     <div class="container mx-auto px-4 py-8 max-w-6xl">
         <header class="mb-10">
             <div class="flex justify-between items-center">
                 <div>
-                    <img src="navbarlogo.png" alt="Goal Tracker Logo" class="h-10 w-auto">
+                    <img src="/dreamit/navbarlogo.png" alt="Goal Tracker Logo" class="h-10 w-auto">
                 </div>
             </div>
             <p class="text-gray-300 mt-2">Your companion for reaching your goals</p>
         </header>
-
         <!-- Navigation -->
         <nav class="mb-8 border-b" style="border-color: #4b5563;">
             <ul class="nav-tabs flex space-x-4 sm:space-x-8 overflow-x-auto md:overflow-visible">
@@ -170,7 +168,6 @@
                 <li class="ml-auto"><button class="tab-btn py-2 px-1 text-gray-400 text-sm sm:text-base" data-tab="settings" aria-selected="false">Settings</button></li>
             </ul>
         </nav>
-
         <!-- Dashboard Tab -->
         <div id="dashboard" class="tab-content active">
             <div id="loadingSpinner" class="loading-spinner">
@@ -178,13 +175,12 @@
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 hidden" id="goalsContainer"></div>
             <div id="noGoalsMessage" class="text-center py-20 hidden">
-                <img src="no_goal.png" alt="No goals yet illustration" class="mx-auto mb-4 rounded-lg" style="width: 300px; height: 200px;">
+                <img src="/dreamit/no_goal.png" alt="No goals yet illustration" class="mx-auto mb-4 rounded-lg" style="width: 300px; height: 200px;">
                 <h3 class="text-xl font-semibold text-gray-200">No goals yet</h3>
                 <p class="text-gray-400 mb-4">Create your first goal to begin your journey.</p>
                 <button id="createFirstGoalBtn" class="btn btn-primary">Create Your First Goal</button>
             </div>
         </div>
-
         <!-- Settings Tab -->
         <div id="settings" class="tab-content hidden">
             <!-- User Profile -->
@@ -208,7 +204,6 @@
                     </div>
                 </div>
             </div>
-
             <!-- Notes Section -->
             <div class="card p-6">
                 <div class="flex justify-between items-center mb-4">
@@ -218,7 +213,6 @@
                 <div id="notesList" class="space-y-4"></div>
             </div>
         </div>
-
         <!-- Goal Modal -->
         <div id="goalModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" role="dialog" aria-labelledby="modalTitle">
             <div class="card rounded-xl p-6 w-full max-w-md mx-4">
@@ -264,7 +258,6 @@
                 </form>
             </div>
         </div>
-
         <!-- Goal Detail Modal -->
         <div id="goalDetailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" role="dialog" aria-labelledby="detailGoalTitle">
             <div class="card rounded-xl p-6 w-full max-w-md mx-4">
@@ -325,7 +318,6 @@
                 </div>
             </div>
         </div>
-
         <!-- Note Modal -->
         <div id="noteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" role="dialog">
             <div class="card rounded-xl p-6 w-full max-w-lg mx-4">
@@ -354,7 +346,6 @@
                 </form>
             </div>
         </div>
-
         <footer class="mt-10 py-4 text-center text-gray-400">
             <p>Powered By <a href="https://devauradigital.com" target="_blank" class="text-blue-400 hover:text-blue-500 transition">DevAura Digital</a></p>
         </footer>
@@ -372,7 +363,6 @@
             appId: "1:1071901848843:web:55c4186244e40f8b131e0e",
             measurementId: "G-9RD6ZZ02EY"
         };
-
         let database;
         try {
             firebase.initializeApp(firebaseConfig);
@@ -382,112 +372,7 @@
             alert('Firebase failed to start.');
         }
 
-        // Password Overlay (with name)
-        const passwordOverlayHTML = `
-            <div id="pwdOverlay" class="fixed inset-0 bg-gradient-to-br from-blue-900 via-blue-700 to-indigo-800 flex items-center justify-center z-[9999] p-4">
-                <div class="card rounded-2xl p-8 w-full max-w-md mx-auto shadow-2xl bg-gray-900/95 backdrop-blur-sm border border-blue-700/30">
-                    <div class="flex justify-center mb-6">
-                        <img src="navbarlogo.png" alt="Dreamit Logo" class="h-16 w-auto">
-                    </div>
-                    <h1 class="text-2xl font-bold text-center text-gray-100 mb-2">
-                        Welcome back<span id="welcomeName">!</span>
-                    </h1>
-                    <p class="text-center text-gray-400 mb-8">Enter your Dreamit password</p>
-                    <div class="mb-5">
-                        <input type="password" id="pwdInput" 
-                               class="input-field w-full text-lg px-4 py-3 rounded-lg bg-gray-800 border border-gray-600 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition"
-                               placeholder="••••••••" autofocus>
-                    </div>
-                    <p id="pwdError" class="error-message text-red-400 text-sm text-center mb-4" style="display:none;"></p>
-                    <button id="pwdSubmit" class="btn btn-primary w-full py-3 text-lg font-medium rounded-lg shadow-lg hover:shadow-blue-500/25 transition transform hover:-translate-y-0.5">
-                        Unlock Dreamit
-                    </button>
-                    <p class="text-center text-xs text-gray-500 mt-6">
-                        Powered by <span class="text-blue-400">Devaura Digital</span>
-                    </p>
-                </div>
-            </div>`;
-        document.body.insertAdjacentHTML('afterbegin', passwordOverlayHTML);
-
-        const pwdOverlay = document.getElementById('pwdOverlay');
-        const pwdInput = document.getElementById('pwdInput');
-        const pwdSubmit = document.getElementById('pwdSubmit');
-        const pwdError = document.getElementById('pwdError');
-
-        // Update welcome name
-        async function updateWelcomeName() {
-            const profileRef = database.ref('userProfile');
-            const snap = await profileRef.once('value');
-            const data = snap.val();
-            const name = data?.name?.trim() || 'there';
-            const el = document.getElementById('welcomeName');
-            if (el) el.textContent = `, ${name}!`;
-        }
-
-        async function sha256(str) {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(str);
-            const hash = await crypto.subtle.digest('SHA-256', data);
-            return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-
-        const PW_PATH = 'appPassword';
-        let isUnlocked = false;
-
-        async function loadPasswordHash() {
-            const snap = await database.ref(PW_PATH).once('value');
-            return snap.val();
-        }
-
-        async function setInitialPassword(pwd) {
-            const hash = await sha256(pwd);
-            await database.ref(PW_PATH).set(hash);
-            return hash;
-        }
-
-        async function verifyPassword(pwd) {
-            const stored = await loadPasswordHash();
-            if (!stored) return false;
-            const inputHash = await sha256(pwd);
-            return inputHash === stored;
-        }
-
-        async function attemptUnlock() {
-            const pwd = pwdInput.value.trim();
-            if (!pwd) { pwdError.textContent = 'Password required'; pwdError.style.display='block'; return; }
-
-            const stored = await loadPasswordHash();
-            if (!stored) {
-                if (confirm('No password exists. Set this as the app password?')) {
-                    await setInitialPassword(pwd);
-                    unlockApp();
-                }
-                return;
-            }
-
-            const ok = await verifyPassword(pwd);
-            if (ok) unlockApp();
-            else { pwdError.textContent = 'Incorrect password'; pwdError.style.display='block'; }
-        }
-
-        function unlockApp() {
-            isUnlocked = true;
-            pwdOverlay.remove();
-            document.body.style.visibility = 'visible';
-            initApp();
-            updateWelcomeName(); // Show name after unlock
-        }
-
-        pwdSubmit.addEventListener('click', attemptUnlock);
-        pwdInput.addEventListener('keydown', e => { if (e.key === 'Enter') attemptUnlock(); });
-
-        document.body.style.visibility = 'hidden';
-        pwdOverlay.style.visibility = 'visible';
-
-        // Load name on first render
-        updateWelcomeName();
-
-        // MAIN APP
+        // MAIN APP (NO PASSWORD)
         function initApp() {
             const elements = {
                 dashboardTab: document.getElementById('dashboard'),
@@ -546,13 +431,32 @@
                 closeNoteModal: document.getElementById('closeNoteModal'),
                 cancelNoteBtn: document.getElementById('cancelNoteBtn')
             };
-
             let goals = [];
             let currentGoalId = null;
             let notes = [];
-
             const profileRef = database.ref('userProfile');
             const notesRef = database.ref('notes');
+
+            // === PWA INSTALL BANNER (AUTO AFTER 2 SEC) ===
+            let deferredPrompt;
+            window.addEventListener('beforeinstallprompt', (e) => {
+                console.log('PWA install prompt ready');
+                e.preventDefault();
+                deferredPrompt = e;
+                setTimeout(() => {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        deferredPrompt.userChoice.then((choice) => {
+                            console.log('Install choice:', choice.outcome);
+                            deferredPrompt = null;
+                        });
+                    }
+                }, 2000);
+            });
+
+            // ... [rest of your app logic unchanged] ...
+            // (All your existing functions: updateGoalProgress, renderGoals, etc.)
+            // For brevity, keep your full JS logic here (same as before, just no password)
 
             // Utility Functions
             const formatCurrency = (amount) => isNaN(amount) ? '0' : amount.toLocaleString('en-IN');
@@ -875,7 +779,6 @@
                     elements.userWeight.value = data.weight || '';
                 }
             }
-
             elements.saveProfileBtn.addEventListener('click', async () => {
                 const profile = {
                     name: elements.userName.value.trim() || 'Anonymous',
@@ -884,9 +787,7 @@
                 };
                 await profileRef.set(profile);
                 alert('Profile saved!');
-                updateWelcomeName(); // Update name on password screen
             });
-
             async function loadNotes() {
                 const snap = await notesRef.once('value');
                 notes = [];
@@ -895,7 +796,6 @@
                 });
                 renderNotes();
             }
-
             function renderNotes() {
                 elements.notesList.innerHTML = '';
                 if (notes.length === 0) {
@@ -919,7 +819,6 @@
                     `;
                     elements.notesList.appendChild(noteEl);
                 });
-
                 document.querySelectorAll('.edit-note').forEach(btn => {
                     btn.addEventListener('click', () => editNote(btn.dataset.id));
                 });
@@ -927,7 +826,6 @@
                     btn.addEventListener('click', () => deleteNote(btn.dataset.id));
                 });
             }
-
             function openNoteModal(note = null) {
                 elements.noteModal.classList.remove('hidden');
                 elements.noteModalTitle.textContent = note ? 'Edit Note' : 'New Note';
@@ -936,7 +834,6 @@
                 elements.noteContent.value = note?.content || '';
                 elements.noteTitle.focus();
             }
-
             async function saveNote(e) {
                 e.preventDefault();
                 const id = elements.noteId.value || notesRef.push().key;
@@ -949,19 +846,16 @@
                 closeModal(elements.noteModal, elements.noteForm);
                 loadNotes();
             }
-
             function editNote(id) {
                 const note = notes.find(n => n.id === id);
                 if (note) openNoteModal(note);
             }
-
             async function deleteNote(id) {
                 if (confirm('Delete this note?')) {
                     await notesRef.child(id).remove();
                     loadNotes();
                 }
             }
-
             elements.addNoteBtn.addEventListener('click', () => openNoteModal());
             elements.closeNoteModal.addEventListener('click', () => closeModal(elements.noteModal, elements.noteForm));
             elements.cancelNoteBtn.addEventListener('click', () => closeModal(elements.noteModal, elements.noteForm));
@@ -1121,7 +1015,6 @@
                     }, 500));
                 }
             };
-
             const init = async () => {
                 await loadData('goals', goals, (goal) => {
                     goal.milestones = goal.milestones || [];
@@ -1136,35 +1029,18 @@
             };
             init();
         }
+
+        // Start app immediately (no password)
+        initApp();
+
+        // SERVICE WORKER
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/dreamit/sw.js', { scope: '/dreamit/' })
+                    .then(reg => console.log('SW registered:', reg.scope))
+                    .catch(err => console.error('SW failed:', err));
+            });
+        }
     </script>
-    <!-- SERVICE WORKER REGISTRATION -->
-  <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/dreamit/sw.js', { scope: '/dreamit/' })
-        .then(reg => console.log('SW registered:', reg.scope))
-        .catch(err => console.error('SW failed:', err));
-    });
-  }
-</script>
-  </body>
+</body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
