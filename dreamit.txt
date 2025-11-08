@@ -1,0 +1,763 @@
+index.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Dreamit - Goal Tracker</title>
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="apple-touch-icon" href="/navbarlogo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        body {font-family:'Poppins',sans-serif;background:#1a1a1a;color:#e5e7eb;margin:0;}
+        .card {background:#2d2d2d;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border-radius:.75rem;transition:.3s;}
+        .card:hover {transform:translateY(-2px);box-shadow:0 10px 15px -3px rgba(0,0,0,.2);}
+        .btn {padding:.5rem 1rem;border-radius:.5rem;transition:.3s;}
+        .btn-primary {background:#3b82f6;color:white;}
+        .btn-primary:hover {background:#2563eb;transform:translateY(-2px);}
+        .btn-secondary {color:#9ca3af;}
+        .btn-secondary:hover {background:#4b5563;}
+        .input-field {width:100%;padding:.5rem .75rem;border:1px solid #4b5563;border-radius:.375rem;background:#2d2d2d;color:#e5e7eb;}
+        .input-field:focus {outline:none;border-color:#3b82f6;box-shadow:0 0 0 2px #3b82f6;}
+        .error-message {color:#ef4444;font-size:.875rem;margin-top:.25rem;display:none;}
+        .login-screen {position:fixed;inset:0;background:#1a1a1a;display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999;padding:1rem;}
+        .login-card {background:#2d2d2d;padding:2rem;border-radius:1rem;width:100%;max-width:400px;box-shadow:0 10px 25px rgba(0,0,0,.3);text-align:center;}
+        .hidden-app {display:none;}
+        .progress-bar {transition:width 1s ease;background:#3b82f6 !important;}
+        .wave-hand {display:inline-block;animation:wave 2.5s infinite ease-in-out;transform-origin:70% 70%;}
+        @keyframes wave{0%,100%{transform:rotate(0)}15%{transform:rotate(14deg)}30%{transform:rotate(-8deg)}45%{transform:rotate(12deg)}60%{transform:rotate(-4deg)}75%{transform:rotate(10deg)}}
+
+        /* BIGGER + BUTTON */
+        .add-goal-btn {
+            min-height: 140px;
+            border: 3px dashed #4b5563;
+            background: #2d2d2d;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .add-goal-btn:hover {
+            border-color: #3b82f6;
+            background: #333;
+            transform: translateY(-4px);
+        }
+        .add-goal-btn span {
+            font-size: 3.5rem;
+            color: #6b7280;
+            font-weight: bold;
+        }
+        .add-goal-btn:hover span {
+            color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+<!-- LOGIN / REGISTER SCREEN -->
+<div id="authScreen" class="login-screen">
+    <div class="login-card">
+        <img src="navbarlogo.png" alt="Logo" class="h-12 mx-auto mb-4">
+        <h2 class="text-2xl font-bold text-white mb-2" id="authTitle">Welcome to Dreamit</h2>
+        <p id="authPrompt" class="text-gray-400 mb-4">Sign in to continue</p>
+
+        <input type="text" id="usernameInput" class="input-field mb-3" placeholder="Username" autocomplete="username">
+        <input type="email" id="emailInput" class="hidden" value="">
+        <input type="password" id="passwordInput" class="input-field mb-3" placeholder="Password" autocomplete="current-password">
+        <p id="authError" class="error-message mb-3">Invalid credentials</p>
+
+        <button id="authActionBtn" class="btn btn-primary w-full mb-2">Sign In</button>
+        <p class="text-sm text-gray-400">
+            <span id="toggleText">Don't have an account?</span>
+            <button id="toggleAuthBtn" class="text-blue-400 hover:underline ml-1">Register</button>
+        </p>
+    </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" class="hidden-app">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <header class="mb-10">
+            <div class="flex justify-between items-center">
+                <div>
+                    <img src="navbarlogo.png" alt="Logo" class="h-10 w-auto">
+                    <p class="text-xl text-gray-200 mt-2">Hi, <span id="userName">User</span> <span class="wave-hand">wave</span></p>
+                </div>
+                <button id="logoutBtn" class="btn btn-secondary text-sm">Logout</button>
+            </div>
+            <p class="text-gray-300 mt-2">Your companion for reaching your goals</p>
+        </header>
+
+        <div id="dashboard" class="tab-content active">
+            <div id="loadingSpinner" class="text-center py-10"><div class="inline-block border-4 border-t-blue-500 border-gray-600 rounded-full w-10 h-10 animate-spin"></div></div>
+            <div id="goalsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            <div id="noGoalsMessage" class="text-center py-20 hidden">
+                <img src="no_goal.png" alt="No goals" class="mx-auto mb-4 rounded-lg w-64">
+                <h3 class="text-xl font-semibold text-gray-200">No goals yet</h3>
+                <p class="text-gray-400 mb-4">Create your first goal to begin.</p>
+                <button id="createFirstGoalBtn" class="btn btn-primary">Create Your First Goal</button>
+            </div>
+        </div>
+
+        <!-- Goal Modal -->
+        <div id="goalModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="card p-6 w-full max-w-md mx-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="modalTitle" class="text-xl font-semibold text-gray-200">Create New Goal</h3>
+                    <button id="closeModalBtn" class="text-gray-400 hover:text-gray-200">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <form id="goalForm">
+                    <input type="hidden" id="editGoalId">
+                    <div class="mb-4">
+                        <label class="block text-sm text-gray-400 mb-1">Title</label>
+                        <input type="text" id="goalTitle" required class="input-field" placeholder="Enter title">
+                        <p id="goalTitleError" class="error-message">Required</p>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm text-gray-400 mb-1">Description</label>
+                        <textarea id="goalDescription" class="input-field" rows="3" placeholder="Optional"></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm text-gray-400 mb-1">Category</label>
+                        <select id="goalCategory" required class="input-field">
+                            <option value="">Select</option>
+                            <option value="health">Health</option>
+                            <option value="career">Career</option>
+                            <option value="finance">Finance</option>
+                            <option value="personal">Personal Growth</option>
+                        </select>
+                        <p id="goalCategoryError" class="error-message">Required</p>
+                    </div>
+                    <div id="financeAmountField" class="mb-4 hidden">
+                        <label class="block text-sm text-gray-400 mb-1">Target Amount (₹)</label>
+                        <input type="number" id="targetAmount" min="1" class="input-field" placeholder="10000">
+                        <p id="targetAmountError" class="error-message">Enter valid amount</p>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="cancelGoalBtn" class="btn btn-secondary">Cancel</button>
+                        <button type="submit" id="submitGoalBtn" class="btn btn-primary">Create Goal</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Goal Detail Modal -->
+        <div id="goalDetailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="card p-6 w-full max-w-md mx-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="detailGoalTitle" class="text-xl font-semibold text-gray-200"></h3>
+                    <div class="flex space-x-2">
+                        <button id="editGoalBtn" class="text-gray-400 hover:text-gray-200" title="Edit">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        </button>
+                        <button id="closeDetailModalBtn" class="text-gray-400 hover:text-gray-200">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <p id="detailDescription" class="text-sm text-gray-400 mb-4"></p>
+                <div class="mb-4">
+                    <div class="flex justify-between mb-1"><span class="text-sm text-blue-400">Progress</span><span id="progressPercentage" class="text-sm text-gray-200">0%</span></div>
+                    <div class="w-full bg-gray-700 rounded-full h-2.5"><div id="detailProgressBar" class="progress-bar h-2.5 rounded-full" style="width:0%"></div></div>
+                    <div id="financeProgressText" class="text-sm text-gray-400 mt-2 hidden">Current: ₹<span id="currentAmountDisplay">0</span> / ₹<span id="targetAmountDisplay">0</span></div>
+                </div>
+                <span id="detailCategory" class="px-2 py-1 text-xs rounded-full"></span>
+                <div id="milestoneSection" class="hidden mt-4">
+                    <h4 class="font-medium text-gray-200 mb-2">Milestones</h4>
+                    <div id="milestonesList" class="space-y-2 mb-3"></div>
+                    <div class="flex"><input type="text" id="newMilestoneInput" placeholder="Add milestone" class="input-field flex-grow rounded-l-md"><button id="addMilestoneBtn" class="btn btn-primary rounded-l-none">Add</button></div>
+                </div>
+                <div id="financeSliderSection" class="hidden mt-4">
+                    <h4 class="font-medium text-gray-200 mb-2">Current Amount (₹)</h4>
+                    <input type="range" id="currentAmountSlider" min="0" max="10000" value="0" class="input-field mb-2">
+                    <div class="flex justify-between text-sm text-gray-400 mb-2"><span id="currentAmountLabel">₹0</span><span id="targetAmountLabel">₹10000</span></div>
+                    <input type="number" id="currentAmountInput" min="0" class="input-field" placeholder="Enter amount">
+                </div>
+                <div class="mt-6 flex justify-end"><button id="deleteGoalBtn" class="text-red-400 hover:text-red-300">Delete Goal</button></div>
+            </div>
+        </div>
+
+        <footer class="mt-10 py-4 text-center text-gray-400">
+            <p>Powered by <a href="https://devauradigital.com" target="_blank" class="text-blue-400 hover:text-blue-500">Devaura Digital</a></p>
+        </footer>
+    </div>
+</div>
+
+<script>
+/* ========== FIREBASE CONFIG + NO PERSISTENCE ========== */
+const firebaseConfig = {
+    apiKey: "AIzaSyA3Y1aDGpyKD1QM50GpPsl6OsvK026zmOU",
+    authDomain: "goal-tracker-1725.firebaseapp.com",
+    databaseURL: "https://goal-tracker-1725-default-rtdb.firebaseio.com",
+    projectId: "goal-tracker-1725",
+    storageBucket: "goal-tracker-1725.firebasestorage.app",
+    messagingSenderId: "1071901848843",
+    appId: "1:1071901848843:web:55c4186244e40f8b131e0e"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
+auth.setPersistence(firebase.auth.Auth.Persistence.NONE);
+
+/* ========== AUTH UI ========== */
+const authScreen = document.getElementById('authScreen');
+const mainApp = document.getElementById('mainApp');
+const authTitle = document.getElementById('authTitle');
+const authPrompt = document.getElementById('authPrompt');
+const authActionBtn = document.getElementById('authActionBtn');
+const toggleAuthBtn = document.getElementById('toggleAuthBtn');
+const toggleText = document.getElementById('toggleText');
+const usernameInput = document.getElementById('usernameInput');
+const passwordInput = document.getElementById('passwordInput');
+const authError = document.getElementById('authError');
+
+let isLogin = true;
+let savedUsername = localStorage.getItem('dreamit_username') || '';
+
+function usernameToEmail(username) {
+    return `${username.toLowerCase().replace(/[^a-z0-9]/g, '')}@dreamit.local`;
+}
+
+function updateAuthUI() {
+    if (savedUsername && isLogin) {
+        usernameInput.value = savedUsername;
+        usernameInput.style.display = 'none';
+        authPrompt.textContent = `Welcome back, ${savedUsername}`;
+        authTitle.textContent = 'Enter Password';
+    } else {
+        usernameInput.style.display = 'block';
+        authPrompt.textContent = isLogin ? 'Sign in with username' : 'Choose a username';
+        authTitle.textContent = isLogin ? 'Welcome Back' : 'Create Account';
+    }
+    authError.style.display = 'none';
+}
+
+toggleAuthBtn.addEventListener('click', () => {
+    isLogin = !isLogin;
+    toggleText.textContent = isLogin ? "Don't have an account?" : 'Already have an account?';
+    toggleAuthBtn.textContent = isLogin ? 'Register' : 'Sign In';
+    updateAuthUI();
+});
+
+authActionBtn.addEventListener('click', () => {
+    const username = savedUsername || usernameInput.value.trim();
+    const password = passwordInput.value;
+    if (!username || !password) return showAuthError('Enter username and password');
+
+    const email = usernameToEmail(username);
+
+    if (isLogin) {
+        auth.signInWithEmailAndPassword(email, password)
+            .then(() => localStorage.setItem('dreamit_username', username))
+            .catch(err => showAuthError(err.code === 'auth/user-not-found' ? 'Username not found' : err.message));
+    } else {
+        auth.createUserWithEmailAndPassword(email, password)
+            .then(cred => {
+                localStorage.setItem('dreamit_username', username);
+                return cred.user.updateProfile({ displayName: username });
+            })
+            .catch(err => showAuthError(err.code === 'auth/email-already-in-use' ? 'Username taken' : err.message));
+    }
+});
+
+function showAuthError(msg) {
+    authError.textContent = msg;
+    authError.style.display = 'block';
+}
+
+/* ========== AUTH STATE CHANGE ========== */
+auth.onAuthStateChanged(user => {
+    if (user) {
+        document.getElementById('userName').textContent = user.displayName || user.email.split('@')[0];
+        authScreen.style.display = 'none';
+        mainApp.classList.remove('hidden-app');
+        initGoalApp(user.uid);
+    } else {
+        authScreen.style.display = 'flex';
+        mainApp.classList.add('hidden-app');
+        updateAuthUI();
+    }
+});
+
+/* ========== LOGOUT ========== */
+document.getElementById('logoutBtn').addEventListener('click', () => {
+    localStorage.removeItem('dreamit_username');
+    auth.signOut().then(() => {
+        authScreen.style.display = 'flex';
+        mainApp.classList.add('hidden-app');
+        updateAuthUI();
+    });
+});
+
+/* ========== GOAL APP ========== */
+let goals = [], currentGoalId = null;
+const elements = {
+    goalsContainer: document.getElementById('goalsContainer'),
+    noGoalsMessage: document.getElementById('noGoalsMessage'),
+    loadingSpinner: document.getElementById('loadingSpinner'),
+    goalModal: document.getElementById('goalModal'),
+    goalDetailModal: document.getElementById('goalDetailModal'),
+    goalForm: document.getElementById('goalForm'),
+    createFirstGoalBtn: document.getElementById('createFirstGoalBtn'),
+    closeModalBtn: document.getElementById('closeModalBtn'),
+    cancelGoalBtn: document.getElementById('cancelGoalBtn'),
+    closeDetailModalBtn: document.getElementById('closeDetailModalBtn'),
+    editGoalBtn: document.getElementById('editGoalBtn'),
+    deleteGoalBtn: document.getElementById('deleteGoalBtn'),
+    addMilestoneBtn: document.getElementById('addMilestoneBtn'),
+    newMilestoneInput: document.getElementById('newMilestoneInput'),
+    goalCategory: document.getElementById('goalCategory'),
+    financeAmountField: document.getElementById('financeAmountField'),
+    targetAmount: document.getElementById('targetAmount'),
+    milestoneSection: document.getElementById('milestoneSection'),
+    financeSliderSection: document.getElementById('financeSliderSection'),
+    currentAmountSlider: document.getElementById('currentAmountSlider'),
+    currentAmountInput: document.getElementById('currentAmountInput'),
+    currentAmountLabel: document.getElementById('currentAmountLabel'),
+    targetAmountLabel: document.getElementById('targetAmountLabel'),
+    currentAmountDisplay: document.getElementById('currentAmountDisplay'),
+    targetAmountDisplay: document.getElementById('targetAmountDisplay'),
+    modalTitle: document.getElementById('modalTitle'),
+    submitGoalBtn: document.getElementById('submitGoalBtn'),
+    editGoalId: document.getElementById('editGoalId'),
+    goalTitle: document.getElementById('goalTitle'),
+    goalDescription: document.getElementById('goalDescription'),
+    detailGoalTitle: document.getElementById('detailGoalTitle'),
+    detailDescription: document.getElementById('detailDescription'),
+    progressPercentage: document.getElementById('progressPercentage'),
+    detailProgressBar: document.getElementById('detailProgressBar'),
+    detailCategory: document.getElementById('detailCategory'),
+    milestonesList: document.getElementById('milestonesList'),
+    goalTitleError: document.getElementById('goalTitleError'),
+    goalCategoryError: document.getElementById('goalCategoryError'),
+    targetAmountError: document.getElementById('targetAmountError')
+};
+
+/* ---------- Helpers ---------- */
+function formatCurrency(n) { return isNaN(n) ? '0' : n.toLocaleString('en-IN'); }
+function getCategoryInfo(c) {
+    const map = {
+        health: {n:'Health',c:'bg-green-900 text-green-300'},
+        career: {n:'Career',c:'bg-purple-900 text-purple-300'},
+        finance: {n:'Finance',c:'bg-blue-900 text-blue-300'},
+        personal: {n:'Personal Growth',c:'bg-pink-900 text-pink-300'}
+    };
+    return map[c] || {n:'Other',c:'bg-gray-900 text-gray-300'};
+}
+function sanitizeGoal(g) {
+    return {
+        id: g.id || db.ref().push().key,
+        title: g.title || '',
+        description: g.description || '',
+        category: g.category || '',
+        progress: 0,
+        milestones: Array.isArray(g.milestones) ? g.milestones.map(m=>({id:m.id||Date.now(),text:m.text||'',completed:!!m.completed})) : [],
+        targetAmount: g.category==='finance' ? Number(g.targetAmount)||null : null,
+        currentAmount: g.category==='finance' ? Number(g.currentAmount)||0 : null,
+        order: Number(g.order)||0,
+        createdAt: g.createdAt || new Date().toISOString(),
+        progressHistory: g.progressHistory || []
+    };
+}
+
+/* ---------- DB ---------- */
+async function saveGoals(uid) {
+    const updates = {};
+    goals.forEach((g,i) => { updates[`users/${uid}/goals/${g.id}`] = {...g, order:i}; });
+    await db.ref().update(updates);
+}
+async function loadGoals(uid) {
+    elements.loadingSpinner.style.display = 'block';
+    const snap = await db.ref(`users/${uid}/goals`).once('value');
+    goals = [];
+    snap.forEach(child => {
+        const g = child.val();
+        g.milestones = g.milestones || [];
+        g.progressHistory = g.progressHistory || [];
+        updateProgress(g);
+        goals.push(g);
+    });
+    goals.sort((a,b)=>a.order-b.order);
+    elements.loadingSpinner.style.display = 'none';
+    renderGoals();
+}
+
+/* ---------- Progress ---------- */
+function updateProgress(goal) {
+    if (goal.category === 'finance') {
+        goal.progress = goal.targetAmount ? Math.min(100, Math.round((goal.currentAmount||0)/goal.targetAmount*100)) : 0;
+    } else {
+        const done = goal.milestones.filter(m=>m.completed).length;
+        goal.progress = goal.milestones.length ? Math.round(done/goal.milestones.length*100) : 0;
+    }
+    goal.progressHistory.push({timestamp:new Date().toISOString(), progress:goal.progress});
+    if (currentGoalId===goal.id) updateDetail(goal);
+    updateCard(goal);
+}
+function updateCard(goal) {
+    const card = elements.goalsContainer.querySelector(`[data-id="${goal.id}"]`);
+    if (!card) return;
+    card.querySelector('.progress-bar').style.width = `${goal.progress}%`;
+    card.querySelector('.progress-text').textContent = `${goal.progress}%`;
+    if (goal.category==='finance') {
+        const targetEl = card.querySelector('.finance-target');
+        if (targetEl) targetEl.textContent = `Current: ₹${formatCurrency(goal.currentAmount)} / ₹${formatCurrency(goal.targetAmount)}`;
+    }
+}
+
+/* ---------- Detail Modal ---------- */
+function updateDetail(goal) {
+    const {n,c} = getCategoryInfo(goal.category);
+    elements.detailGoalTitle.textContent = goal.title;
+    elements.detailDescription.textContent = goal.description||'';
+    elements.detailCategory.textContent = n; 
+    elements.detailCategory.className = `px-2 py-1 text-xs rounded-full ${c}`;
+    elements.progressPercentage.textContent = `${goal.progress}%`;
+    elements.detailProgressBar.style.width = `${goal.progress}%`;
+    elements.milestoneSection.classList.toggle('hidden', goal.category==='finance');
+    elements.financeSliderSection.classList.toggle('hidden', goal.category!=='finance');
+    elements.financeProgressText.classList.toggle('hidden', goal.category!=='finance');
+
+    if (goal.category==='finance') {
+        const max = goal.targetAmount||10000;
+        elements.currentAmountSlider.max = max; 
+        elements.currentAmountSlider.value = goal.currentAmount||0;
+        elements.currentAmountInput.max = max; 
+        elements.currentAmountInput.value = goal.currentAmount||0;
+        elements.currentAmountLabel.textContent = `₹${formatCurrency(goal.currentAmount||0)}`;
+        elements.targetAmountLabel.textContent = `₹${formatCurrency(max)}`;
+        elements.currentAmountDisplay.textContent = formatCurrency(goal.currentAmount||0);
+        elements.targetAmountDisplay.textContent = formatCurrency(max);
+    } else {
+        elements.milestonesList.innerHTML = '';
+        (goal.milestones||[]).forEach(m => {
+            const div = document.createElement('div'); 
+            div.className='flex items-center';
+            div.innerHTML = `
+                <input type="checkbox" class="mr-2" ${m.completed?'checked':''}>
+                <label class="flex-grow ${m.completed?'line-through text-gray-500':''}">${m.text}</label>
+                <button class="text-blue-400 edit-milestone text-xs" data-id="${m.id}">Edit</button>
+            `;
+            elements.milestonesList.appendChild(div);
+            div.querySelector('input').addEventListener('change', e=>{
+                m.completed = e.target.checked; 
+                updateProgress(goal); 
+                saveGoals(auth.currentUser.uid); 
+                renderGoals();
+            });
+            div.querySelector('.edit-milestone').addEventListener('click',()=>{
+                const txt = prompt('Edit:',m.text); 
+                if(txt){ m.text=txt; updateDetail(goal); saveGoals(auth.currentUser.uid); }
+            });
+        });
+    }
+}
+
+/* ---------- RENDER GOAL CARD ---------- */
+function renderGoalCard(goal) {
+    const {n,c} = getCategoryInfo(goal.category);
+    const el = document.createElement('div');
+    el.className = 'card p-5 rounded-xl cursor-pointer';
+    el.dataset.id = goal.id;
+    el.innerHTML = `
+        <div class="flex justify-between mb-2">
+            <h3 class="text-lg font-semibold text-gray-200">${goal.title}</h3>
+            <span class="text-xs px-2 py-1 rounded-full ${c}">${n}</span>
+        </div>
+        <p class="text-sm text-gray-400 mb-3 goal-desc">${goal.description||''}</p>
+        <div class="flex justify-between mb-1">
+            <span class="text-sm text-blue-400">Progress</span>
+            <span class="progress-text text-sm text-gray-200">${goal.progress}%</span>
+        </div>
+        <div class="w-full bg-gray-700 rounded-full h-2.5">
+            <div class="progress-bar h-2.5 rounded-full" style="width:${goal.progress}%"></div>
+        </div>
+        ${goal.category==='finance'?`<div class="finance-target text-xs text-gray-400 mt-2">Current: ₹${formatCurrency(goal.currentAmount)} / ₹${formatCurrency(goal.targetAmount)}</div>`:''}
+    `;
+    return el;
+}
+
+/* ---------- RENDER ALL + BIG + BUTTON + CLICK HANDLERS ---------- */
+function renderGoals() {
+    elements.goalsContainer.innerHTML = '';
+
+    // Add goal cards
+    goals.forEach(goal => {
+        const card = renderGoalCard(goal);
+        elements.goalsContainer.appendChild(card);
+
+        // ATTACH CLICK HERE — AFTER DOM INSERT
+        card.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openDetail(goal.id);
+        });
+    });
+
+    // BIGGER + BUTTON
+    const addBtn = document.createElement('div');
+    addBtn.className = 'add-goal-btn';
+    addBtn.innerHTML = `<span>+</span>`;
+    addBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openModal('Create New Goal', 'Create Goal');
+    });
+    elements.goalsContainer.appendChild(addBtn);
+
+    // Toggle visibility
+    elements.goalsContainer.classList.toggle('hidden', goals.length === 0);
+    elements.noGoalsMessage.classList.toggle('hidden', goals.length > 0);
+}
+
+/* ---------- OPEN DETAIL ---------- */
+function openDetail(id) {
+    const g = goals.find(x => x.id === id);
+    if (!g) return;
+    currentGoalId = id;
+    updateDetail(g);
+    elements.goalDetailModal.classList.remove('hidden');
+}
+
+/* ---------- FINANCE FIELD TOGGLE ---------- */
+function toggleFinance(show) {
+    elements.financeAmountField.classList.toggle('hidden', !show);
+    elements.targetAmount.toggleAttribute('required', show);
+}
+
+/* ---------- EVENT LISTENERS ---------- */
+function setupEvents() {
+    elements.goalCategory.addEventListener('change', () => toggleFinance(elements.goalCategory.value === 'finance'));
+    elements.createFirstGoalBtn.addEventListener('click', () => openModal('Create New Goal', 'Create Goal'));
+    elements.closeModalBtn.addEventListener('click', () => closeModal());
+    elements.cancelGoalBtn.addEventListener('click', () => closeModal());
+    elements.closeDetailModalBtn.addEventListener('click', () => elements.goalDetailModal.classList.add('hidden'));
+
+    elements.editGoalBtn.addEventListener('click', () => {
+        const g = goals.find(x => x.id === currentGoalId);
+        if (!g) return;
+        elements.goalDetailModal.classList.add('hidden');
+        openModal('Edit Goal', 'Update Goal');
+        elements.editGoalId.value = g.id;
+        elements.goalTitle.value = g.title;
+        elements.goalDescription.value = g.description || '';
+        elements.goalCategory.value = g.category;
+        toggleFinance(g.category === 'finance');
+        if (g.category === 'finance') elements.targetAmount.value = g.targetAmount || '';
+    });
+
+    elements.goalForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const title = elements.goalTitle.value.trim();
+        const cat = elements.goalCategory.value;
+        const target = cat === 'finance' ? parseFloat(elements.targetAmount.value) : null;
+        if (!title || !cat || (cat === 'finance' && !target)) return alert('Fill required fields');
+
+        const goal = sanitizeGoal({
+            id: elements.editGoalId.value || db.ref().push().key,
+            title, description: elements.goalDescription.value.trim(), category: cat,
+            targetAmount: target,
+            currentAmount: elements.editGoalId.value ? goals.find(x => x.id === elements.editGoalId.value).currentAmount : 0
+        });
+
+        if (elements.editGoalId.value) {
+            const i = goals.findIndex(x => x.id === goal.id);
+            goals[i] = goal;
+        } else {
+            goals.push(goal);
+        }
+        updateProgress(goal);
+        await saveGoals(auth.currentUser.uid);
+        renderGoals();
+        closeModal();
+    });
+
+    elements.addMilestoneBtn.addEventListener('click', () => {
+        const txt = elements.newMilestoneInput.value.trim();
+        if (!txt) return;
+        const g = goals.find(x => x.id === currentGoalId);
+        g.milestones.push({ id: Date.now(), text: txt, completed: false });
+        elements.newMilestoneInput.value = '';
+        updateProgress(g);
+        saveGoals(auth.currentUser.uid);
+        updateDetail(g);
+    });
+
+    elements.deleteGoalBtn.addEventListener('click', async () => {
+        if (!confirm('Delete goal?')) return;
+        goals = goals.filter(x => x.id !== currentGoalId);
+        await db.ref(`users/${auth.currentUser.uid}/goals/${currentGoalId}`).remove();
+        elements.goalDetailModal.classList.add('hidden');
+        renderGoals();
+    });
+
+    elements.currentAmountSlider.addEventListener('input', () => syncSliderInput());
+    elements.currentAmountInput.addEventListener('input', () => syncSliderInput());
+
+    function syncSliderInput() {
+        const g = goals.find(x => x.id === currentGoalId);
+        let val = parseFloat(elements.currentAmountInput.value) || 0;
+        if (val > g.targetAmount) val = g.targetAmount;
+        g.currentAmount = val;
+        elements.currentAmountSlider.value = val;
+        elements.currentAmountLabel.textContent = `₹${formatCurrency(val)}`;
+        updateProgress(g);
+        saveGoals(auth.currentUser.uid);
+        renderGoals();
+    }
+}
+
+/* ---------- MODAL HELPERS ---------- */
+function openModal(title, btnText) {
+    elements.modalTitle.textContent = title;
+    elements.submitGoalBtn.textContent = btnText;
+    elements.goalModal.classList.remove('hidden');
+    elements.goalTitle.focus();
+}
+function closeModal() {
+    elements.goalModal.classList.add('hidden');
+    elements.goalForm.reset();
+    elements.editGoalId.value = '';
+    [elements.goalTitleError, elements.goalCategoryError, elements.targetAmountError].forEach(e => e && e.style && (e.style.display = 'none'));
+}
+
+/* ---------- INIT ---------- */
+function initGoalApp(uid) {
+    loadGoals(uid).then(() => setupEvents());
+}
+
+/* ========== PAGE LOAD ========== */
+updateAuthUI();
+</script>
+</body>
+</html>
+
+
+
+site.manifest
+
+{"name":"Dreamit","short_name":"Dreamit","icons":[
+{"src":"/navbarlogo.png","sizes":"192x192","type":"image/png"},
+{"src":"/navbarlogo.png","sizes":"512x512","type":"image/png"}],
+"theme_color":"#2563EB","background_color":"#2563EB","display":"standalone"}
+
+
+
+sw.js
+
+
+const CACHE_NAME = 'goal-tracker-v2'; // Updated cache name to force update
+const urlsToCache = [
+  '/',
+  '/index.html',
+  '/navbarlogo.png',
+  '/no_goal.png',
+  '/apple-touch-icon.png',
+  '/site.webmanifest',
+  'https://cdn.tailwindcss.com',
+  'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js',
+  'https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js',
+  'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js'
+];
+
+self.addEventListener('install', event => {
+  console.log('Service Worker: Installing...');
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        console.log('Service Worker: Caching files');
+        return cache.addAll(urlsToCache).catch(error => {
+          console.error('Service Worker: Cache addAll failed:', error);
+          throw error;
+        });
+      })
+      .then(() => {
+        console.log('Service Worker: Installation complete');
+        return self.skipWaiting();
+      })
+  );
+});
+
+self.addEventListener('activate', event => {
+  console.log('Service Worker: Activating...');
+  const cacheWhitelist = [CACHE_NAME];
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (!cacheWhitelist.includes(cacheName)) {
+            console.log('Service Worker: Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => {
+      console.log('Service Worker: Activation complete');
+      return self.clients.claim();
+    })
+  );
+});
+
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => {
+        if (response) {
+          console.log('Service Worker: Serving from cache:', event.request.url);
+          return response;
+        }
+        console.log('Service Worker: Fetching from network:', event.request.url);
+        return fetch(event.request).catch(error => {
+          console.error('Service Worker: Fetch failed:', error);
+          throw error;
+        });
+      })
+  );
+});
+
+self.addEventListener('push', event => {
+  console.log('Service Worker: Push event received');
+  const data = event.data ? event.data.json() : { title: 'Goal Tracker Reminder', body: 'Time to check your goals!' };
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: '/navbarlogo.png',
+      badge: '/navbarlogo.png'
+    }).catch(error => {
+      console.error('Service Worker: Notification failed:', error);
+    })
+  );
+});
+
+self.addEventListener('notificationclick', event => {
+  console.log('Service Worker: Notification clicked');
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      for (const client of clientList) {
+        if (client.url.includes('index.html') && 'focus' in client) {
+          console.log('Service Worker: Focusing existing window');
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        console.log('Service Worker: Opening new window');
+        return clients.openWindow('/');
+      }
+    }).catch(error => {
+      console.error('Service Worker: Notification click handling failed:', error);
+    })
+  );
+});
