@@ -1,4 +1,5 @@
-const CACHE = 'dreamit-v1.1';
+// sw.js
+const CACHE = 'dreamit-v1';
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -29,5 +30,3 @@ self.addEventListener('fetch', e => {
     );
   }
 });
-
-
