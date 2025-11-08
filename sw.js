@@ -1,19 +1,29 @@
-const CACHE_NAME = 'dreamit-v1';
-const urlsToCache = [
-  '/dreamit/',
-  '/dreamit/index.html',
-  '/dreamit/site.webmanifest',
-  '/dreamit/navbarlogo.png'
-];
+// sw.js for GitHub Pages (subpath /dreamit/)
+const CACHE = 'dreamit-v1';
 
-self.addEventListener('install', (e) => {
+self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
+    caches.open(CACHE).then(cache => {
+      return cache.addAll([
+        '/dreamit/',
+        '/dreamit/index.html',
+        '/dreamit/site.webmanifest',
+        '/dreamit/navbarlogo.png',
+        '/dreamit/no_goal.png'
+      ]);
+    }).then(() => self.skipWaiting())
   );
 });
 
-self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request).then((response) => response || fetch(e.request))
-  );
+self.addEventListener('activate', e => {
+  e.waitUntil(self.clients.claim());
+});
+
+self.addEventListener('fetch', e => {
+  const req = e.request;
+  if (req.mode === 'navigate') {
+    e.respondWith(caches.match('/dreamit/index.html').then(r => r || fetch(req)));
+  } else {
+    e.respondWith(caches.match(req).then(r => r || fetch(req)));
+  }
 });
