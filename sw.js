@@ -5,11 +5,11 @@ self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE).then(cache => {
       return cache.addAll([
-        '/',
-        '/index.html',
-        '/site.webmanifest',
-        '/navbarlogo.png',
-        '/no_goal.png'
+        '/dreamit/',
+        '/dreamit/index.html',
+        '/dreamit/site.webmanifest',
+        '/dreamit/navbarlogo.png',
+        '/dreamit/no_goal.png'
       ]);
     }).then(() => self.skipWaiting())
   );
@@ -30,3 +30,4 @@ self.addEventListener('fetch', e => {
     );
   }
 });
+
