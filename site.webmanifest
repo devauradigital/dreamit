@@ -1,5 +1,24 @@
-{"name":"Dreamit","short_name":"Dreamit","icons":[
-{"src":"/logo.png","sizes":"192x192","type":"image/png"},
-{"src":"/logo.png","sizes":"512x512","type":"image/png"}],
-"theme_color":"#2563EB","background_color":"#2563EB","display":"standalone"}
-
+{
+  "name": "Dreamit",
+  "short_name": "Dreamit",
+  "description": "Your companion for reaching your goals",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
