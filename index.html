@@ -1165,27 +1165,50 @@
         }
     </script>
     <script>
+// === FORCE APP INSTALL (WORKS ON EVERY PHONE) ===
 (function () {
-  if (!/Mobi|Android|iPhone|iPad|iPod/.test(navigator.userAgent)) return;
+  // Only run on mobile
+  if (!/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) return;
+
+  // Create floating button
   const btn = document.createElement('div');
-  btn.innerHTML = `<button id="installBtn" style="position:fixed; bottom:20px; right:20px; z-index:999999; background:#3b82f6; color:white; border:none; border-radius:50px; width:60px; height:60px; font-size:28px; box-shadow:0 4px 15px rgba(0,0,0,0.3); cursor:pointer; display:flex; align-items:center; justify-content:center; font-family:inherit; outline:none;">+</button>`;
+  btn.innerHTML = `
+    <button id="installAppBtn" style="
+      position:fixed; bottom:24px; right:24px; z-index:999999;
+      background:#3b82f6; color:white; border:none; border-radius:50%;
+      width:64px; height:64px; font-size:32px; font-weight:bold;
+      box-shadow:0 6px 20px rgba(0,0,0,0.3); cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      font-family:inherit; outline:none; user-select:none;
+    ">+</button>
+  `;
   document.body.appendChild(btn);
-  document.getElementById('installBtn').onclick = () => {
-    const isAndroid = /Android/.test(navigator.userAgent);
-    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+
+  // Click handler
+  document.getElementById('installAppBtn').onclick = () => {
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const url = window.location.href;
+
     if (isAndroid) {
-      alert('Tap the 3-dot menu (⋮) → "Add to Home screen"');
-      window.location.href = `intent://${location.host}${location.pathname}#Intent;scheme=https;package=com.android.chrome;end`;
-    } else if (isIOS) {
-      alert('Tap the Share icon (⬆️) → "Add to Home Screen"');
-    } else {
-      alert('Use browser menu → "Add to Home screen"');
+      // Force Chrome "Add to Home screen"
+      window.location = `intent:${url}#Intent;scheme=https;package=com.android.chrome;end`;
+      setTimeout(() => {
+        alert("In Chrome: Tap the 3-dot menu → 'Add to Home screen'");
+      }, 1000);
+    } 
+    else if (isIOS) {
+      alert("In Safari: Tap the Share icon (box with arrow) → 'Add to Home Screen'");
+    } 
+    else {
+      alert("Use your browser's menu → 'Add to Home screen'");
     }
   };
 })();
 </script>
 </body>
 </html>
+
 
 
 
