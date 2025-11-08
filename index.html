@@ -1148,45 +1148,9 @@
     });
   }
     </script>
-
-           <button id="pwaInstallBtn" class="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-50">
-  Install Dreamit
-</button>
-
-    <!-- PWA Install Button -->
-<button id="pwaInstallBtn"
-        class="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-full shadow-xl z-[10000] transition transform hover:scale-105 hidden">
-  Install Dreamit
-</button>
-
-<script>
-  // PWA Install Logic
-  let installPrompt = null;
-  const installBtn = document.getElementById('pwaInstallBtn');
-
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    installPrompt = e;
-    installBtn.style.display = 'block';
-  });
-
-  installBtn.addEventListener('click', () => {
-    if (!installPrompt) return;
-    installPrompt.prompt();
-    installPrompt.userChoice.then((choice) => {
-      if (choice.outcome === 'accepted') {
-        installBtn.style.display = 'none';
-      }
-      installPrompt = null;
-    });
-  });
-
-  window.addEventListener('appinstalled', () => {
-    installBtn.style.display = 'none';
-  });
-</script>
-</body>
+  </body>
 </html>
+
 
 
 
