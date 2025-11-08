@@ -178,6 +178,35 @@
         }
     </style>
 </head>
+<script>
+  // === FORCE INSTALL BUTTON (Android + iOS) ===
+  const addInstallButton = () => {
+    const btn = document.createElement('button');
+    btn.innerHTML = 'Install Dreamit App';
+    btn.style = `
+      position:fixed; bottom:20px; right:20px; z-index:9999;
+      background:#3b82f6; color:white; border:none; border-radius:12px;
+      padding:12px 20px; font-weight:600; font-size:14px; box-shadow:0 4px 12px rgba(0,0,0,0.3);
+      cursor:pointer; font-family:inherit;
+    `;
+
+    btn.onclick = () => {
+      if (navigator.userAgent.includes('Android')) {
+        // Android: Open in Chrome → forces "Add to Home screen"
+        alert('Tap the 3-dot menu → "Add to Home screen"');
+        window.location.href = 'intent://' + window.location.host + window.location.pathname + '#Intent;scheme=https;package=com.android.chrome;end';
+      } else {
+        // iOS: Show instructions
+        alert('Tap Share → "Add to Home Screen"');
+      }
+    };
+
+    document.body.appendChild(btn);
+  };
+
+  // Show button after page loads
+  window.addEventListener('load', addInstallButton);
+</script>
 <body class="min-h-screen">
     <div class="container mx-auto px-4 py-8 max-w-6xl">
         <header class="mb-10">
@@ -1165,6 +1194,7 @@
     </script>
 </body>
 </html>
+
 
 
 
