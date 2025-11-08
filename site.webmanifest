@@ -3,7 +3,7 @@
   "short_name": "Dreamit",
   "start_url": "/dreamit/",
   "display": "standalone",
-  "background_color": "#1a1a1a",
+  "background_color": "#3b82f6",
   "theme_color": "#3b82f6",
   "orientation": "portrait-primary",
   "icons": [
@@ -21,4 +21,5 @@
     }
   ]
 }
+
 
