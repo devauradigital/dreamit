@@ -1,1 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Dreamit">
 
+    <title>Dreamit</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/dreamit/site.webmanifest">
+    <link rel="apple-touch-icon" href="/dreamit/navbarlogo.png">
+
+    <!-- Tailwind & Charts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        body {font-family:'Poppins',sans-serif;background:#1a1a1a;color:#e5e7eb;}
+        .card{background:#2d2d2d;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);transition:all .3s;}
+        .card:hover{transform:translateY(-2px);box-shadow:0 10px 15px -3px rgba(0,0,0,.2);}
+        .goal-card{cursor:pointer;}
+        .goal-card.dragging{opacity:.5;transform:scale(.98);}
+        .progress-bar{transition:width 1s ease-in-out;background:#3b82f6 !important;}
+        .tab-content{display:none;}
+        .tab-content.active{display:block;animation:fadeIn .3s;}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+        .btn{transition:all .3s;border-radius:.5rem;padding:.5rem 1rem;}
+        .btn-primary{background:#3b82f6;color:#fff;}
+        .btn-primary:hover{background:#2563eb;transform:translateY(-2px);}
+        .input-field,.select-field,.textarea-field{width:100%;padding:.5rem .75rem;border:1px solid #4b5563;border-radius:.375rem;background:#2d2d2d;color:#e5e7eb;transition:all .3s;}
+        .input-field:focus,.select-field:focus,.textarea-field:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 2px #3b82f6;}
+        .error-message{color:#ef4444;font-size:.875rem;margin-top:.25rem;display:none;}
+        .loading-spinner{display:flex;justify-content:center;align-items:center;padding:2rem;}
+        .spinner{border:4px solid rgba(59,130,246,.2);border-top:4px solid #3b82f6;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;}
+        @keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+        .nav-tabs{scrollbar-width:none;-ms-overflow-style:none;}
+        .nav-tabs::-webkit-scrollbar{display:none;}
+    </style>
+</head>
+<body class="min-h-screen">
+<div class="container mx-auto px-4 py-8 max-w-6xl">
+    <header class="mb-10 flex justify-between items-center">
+        <img src="/dreamit/navbarlogo.png" alt="Logo" class="h-10 w-auto">
+        <p class="text-gray-300 mt-2">Your companion for reaching your goals</p>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="mb-8 border-b" style="border-color:#4b5563;">
+        <ul class="nav-tabs flex space-x-4 sm:space-x-8 overflow-x-auto md:overflow-visible">
+            <li><button class="tab-btn active py-2 px-1 border-b-2 border-blue-400 text-blue-400 text-sm sm:text-base" data-tab="dashboard">Dashboard</button></li>
+            <li class="ml-auto"><button class="tab-btn py-2 px-1 text-gray-400 text-sm sm:text-base" data-tab="settings">Settings</button></li>
+        </ul>
+    </nav>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="tab-content active">
+        <div id="loadingSpinner" class="loading-spinner"><div class="spinner"></div></div>
+        <div id="goalsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 hidden"></div>
+        <div id="noGoalsMessage" class="text-center py-20 hidden">
+            <img src="/dreamit/no_goal.png" alt="No goals" class="mx-auto mb-4 rounded-lg w-72 h-52">
+            <h3 class="text-xl font-semibold text-gray-200">No goals yet</h3>
+            <p class="text-gray-400 mb-4">Create your first goal to begin your journey.</p>
+            <button id="createFirstGoalBtn" class="btn btn-primary">Create Your First Goal</button>
+        </div>
+    </div>
+
+    <!-- Settings -->
+    <div id="settings" class="tab-content hidden">
+        <div class="card p-6 mb-6">
+            <h3 class="text-xl font-semibold mb-4 text-gray-200">Profile</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div><label class="block text-sm font-medium text-gray-400 mb-1">Name</label><input type="text" id="userName" class="input-field" placeholder="Your name"></div>
+                <div><label class="block text-sm font-medium text-gray-400 mb-1">Height (cm)</label><input type="number" id="userHeight" class="input-field" min="100" max="250" placeholder="170"></div>
+                <div><label class="block text-sm font-medium text-gray-400 mb-1">Weight (kg)</label><input type="number" id="userWeight" class="input-field" min="30" max="200" step="0.1" placeholder="65"></div>
+                <div class="md:col-span-2"><button id="saveProfileBtn" class="btn btn-primary mt-2">Save Profile</button></div>
+            </div>
+        </div>
+        <div class="card p-6">
+            <div class="flex justify-between items-center mb-4"><h3 class="text-xl font-semibold text-gray-200">My Notes</h3><button id="addNoteBtn" class="btn btn-primary text-sm">+ New Note</button></div>
+            <div id="notesList" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <!-- Goal Modal -->
+    <div id="goalModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="card rounded-xl p-6 w-full max-w-md mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modalTitle" class="text-xl font-semibold text-gray-200">Create New Goal</h3>
+                <button id="closeModalBtn" class="text-gray-400 hover:text-gray-200"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+            </div>
+            <form id="goalForm">
+                <input type="hidden" id="editGoalId">
+                <div class="mb-4"><label class="block text-sm font-medium text-gray-400 mb-1">Goal Title</label><input type="text" id="goalTitle" required class="input-field" placeholder="Enter goal title"><p id="goalTitleError" class="error-message">Goal title is required</p></div>
+                <div class="mb-4"><label class="block text-sm font-medium text-gray-400 mb-1">Description</label><textarea id="goalDescription" class="textarea-field" rows="4" placeholder="Enter goal description"></textarea></div>
+                <div class="mb-4"><label class="block text-sm font-medium text-gray-400 mb-1">Category</label>
+                    <select id="goalCategory" class="select-field" required><option value="">Select Category</option><option value="health">Health</option><option value="career">Career</option><option value="finance">Finance</option><option value="personal">Personal Growth</option></select>
+                    <p id="goalCategoryError" class="error-message">Please select a category</p>
+                </div>
+                <div id="financeAmountField" class="mb-4 hidden"><label class="block text-sm font-medium text-gray-400 mb-1">Target Amount (₹)</label><input type="number" id="targetAmount" min="1" step="1" class="input-field" placeholder="Enter target amount"><p id="targetAmountError" class="error-message">Please enter a valid target amount</p></div>
+                <div class="flex justify-end space-x-3"><button type="button" id="cancelGoalBtn" class="btn btn-secondary">Cancel</button><button type="submit" id="submitGoalBtn" class="btn btn-primary">Create Goal</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Goal Detail Modal -->
+    <div id="goalDetailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="card rounded-xl p-6 w-full max-w-md mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="detailGoalTitle" class="text-xl font-semibold text-gray-200"></h3>
+                <div class="flex space-x-2">
+                    <button id="editGoalBtn" class="text-gray-400 hover:text-gray-200"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+                    <button id="closeDetailModalBtn" class="text-gray-400 hover:text-gray-200"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                </div>
+            </div>
+            <div class="mb-4"><p id="detailDescription" class="text-sm text-gray-400"></p></div>
+            <div class="mb-4">
+                <div class="flex justify-between mb-1"><span class="text-sm font-medium text-blue-400">Progress</span><span id="progressPercentage" class="text-sm font-medium text-gray-200">0%</span></div>
+                <div class="w-full bg-gray-600 rounded-full h-2.5"><div id="detailProgressBar" class="bg-blue-500 h-2.5 rounded-full progress-bar" style="width:0%"></div></div>
+                <div id="financeProgressText" class="text-sm mt-2 hidden text-gray-400">Current: ₹<span id="currentAmountDisplay">0</span> / ₹<span id="targetAmountDisplay">0</span></div>
+            </div>
+            <div class="flex items-center text-sm mb-3 text-gray-400"><span id="detailCategory" class="px-2 py-1 text-xs rounded-full"></span></div>
+            <div id="milestoneSection" class="hidden">
+                <h4 class="font-medium mb-3 text-gray-200">Milestones</h4>
+                <div id="milestonesList" class="space-y-2 mb-4"></div>
+                <div class="flex"><input type="text" id="newMilestoneInput" placeholder="Add a new milestone" class="input-field flex-grow rounded-l-md"><button id="addMilestoneBtn" class="btn btn-primary rounded-l-none">Add</button></div>
+            </div>
+            <div id="financeSliderSection" class="hidden">
+                <h4 class="font-medium mb-3 text-gray-200">Current Amount (₹)</h4>
+                <input type="range" id="currentAmountSlider" min="0" max="10000" value="0" class="input-field mb-2">
+                <div class="flex justify-between text-sm mb-2 text-gray-400"><span id="currentAmountLabel">₹0</span><span id="targetAmountLabel">₹10000</span></div>
+                <input type="number" id="currentAmountInput" min="0" step="1" class="input-field" placeholder="Enter current amount">
+            </div>
+            <div class="mt-6 flex justify-end space-x-3"><button id="deleteGoalBtn" class="btn text-red-400">Delete Goal</button></div>
+        </div>
+    </div>
+
+    <!-- Note Modal -->
+    <div id="noteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="card rounded-xl p-6 w-full max-w-lg mx-4">
+            <div class="flex justify-between items-center mb-4"><h3 id="noteModalTitle" class="text-xl font-semibold text-gray-200">New Note</h3>
+                <button id="closeNoteModal" class="text-gray-400 hover:text-gray-200"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+            </div>
+            <form id="noteForm">
+                <input type="hidden" id="noteId">
+                <div class="mb-4"><label class="block text-sm font-medium text-gray-400 mb-1">Title</label><input type="text" id="noteTitle" class="input-field" placeholder="Untitled Note"></div>
+                <div class="mb-4"><label class="block text-sm font-medium text-gray-400 mb-1">Content</label><textarea id="noteContent" class="textarea-field" rows="6" placeholder="Write your thoughts..."></textarea></div>
+                <div class="flex justify-end space-x-3"><button type="button" id="cancelNoteBtn" class="btn btn-secondary">Cancel</button><button type="submit" class="btn btn-primary">Save Note</button></div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="mt-10 py-4 text-center text-gray-400">
+        <p>Powered By <a href="https://devauradigital.com" target="_blank" class="text-blue-400 hover:text-blue-500">DevAura Digital</a></p>
+    </footer>
+</div>
+
+<script>
+/* ==================== FIREBASE ==================== */
+const firebaseConfig = {
+    apiKey: "AIzaSyA3Y1aDGpyKD1QM50GpPsl6OsvK026zmOU",
+    authDomain: "goal-tracker-1725.firebaseapp.com",
+    databaseURL: "https://goal-tracker-1725-default-rtdb.firebaseio.com",
+    projectId: "goal-tracker-1725",
+    storageBucket: "goal-tracker-1725.firebasestorage.app",
+    messagingSenderId: "1071901848843",
+    appId: "1:1071901848843:web:55c4186244e40f8b131e0e",
+    measurementId: "G-9RD6ZZ02EY"
+};
+let database;
+try { firebase.initializeApp(firebaseConfig); database = firebase.database(); }
+catch(e){ console.error(e); alert('Firebase failed'); }
+
+/* ==================== APP LOGIC ==================== */
+function initApp() {
+    const el = {
+        dashboard: document.getElementById('dashboard'), tabBtns: document.querySelectorAll('.tab-btn'),
+        goalsContainer: document.getElementById('goalsContainer'), noGoalsMessage: document.getElementById('noGoalsMessage'),
+        goalModal: document.getElementById('goalModal'), goalDetailModal: document.getElementById('goalDetailModal'),
+        goalForm: document.getElementById('goalForm'), createFirstGoalBtn: document.getElementById('createFirstGoalBtn'),
+        closeModalBtn: document.getElementById('closeModalBtn'), cancelGoalBtn: document.getElementById('cancelGoalBtn'),
+        closeDetailModalBtn: document.getElementById('closeDetailModalBtn'), editGoalBtn: document.getElementById('editGoalBtn'),
+        deleteGoalBtn: document.getElementById('deleteGoalBtn'), addMilestoneBtn: document.getElementById('addMilestoneBtn'),
+        newMilestoneInput: document.getElementById('newMilestoneInput'), goalCategorySelect: document.getElementById('goalCategory'),
+        financeAmountField: document.getElementById('financeAmountField'), targetAmountInput: document.getElementById('targetAmount'),
+        milestoneSection: document.getElementById('milestoneSection'), financeSliderSection: document.getElementById('financeSliderSection'),
+        currentAmountSlider: document.getElementById('currentAmountSlider'), currentAmountInput: document.getElementById('currentAmountInput'),
+        currentAmountLabel: document.getElementById('currentAmountLabel'), targetAmountLabel: document.getElementById('targetAmountLabel'),
+        currentAmountDisplay: document.getElementById('currentAmountDisplay'), targetAmountDisplay: document.getElementById('targetAmountDisplay'),
+        modalTitle: document.getElementById('modalTitle'), submitGoalBtn: document.getElementById('submitGoalBtn'),
+        editGoalId: document.getElementById('editGoalId'), goalTitle: document.getElementById('goalTitle'),
+        goalDescription: document.getElementById('goalDescription'), detailDescription: document.getElementById('detailDescription'),
+        progressPercentage: document.getElementById('progressPercentage'), detailProgressBar: document.getElementById('detailProgressBar'),
+        detailGoalTitle: document.getElementById('detailGoalTitle'), detailCategory: document.getElementById('detailCategory'),
+        milestonesList: document.getElementById('milestonesList'), goalTitleError: document.getElementById('goalTitleError'),
+        goalCategoryError: document.getElementById('goalCategoryError'), targetAmountError: document.getElementById('targetAmountError'),
+        loadingSpinner: document.getElementById('loadingSpinner'), userName: document.getElementById('userName'),
+        userHeight: document.getElementById('userHeight'), userWeight: document.getElementById('userWeight'),
+        saveProfileBtn: document.getElementById('saveProfileBtn'), addNoteBtn: document.getElementById('addNoteBtn'),
+        notesList: document.getElementById('notesList'), noteModal: document.getElementById('noteModal'),
+        noteModalTitle: document.getElementById('noteModalTitle'), noteForm: document.getElementById('noteForm'),
+        noteId: document.getElementById('noteId'), noteTitle: document.getElementById('noteTitle'), noteContent: document.getElementById('noteContent'),
+        closeNoteModal: document.getElementById('closeNoteModal'), cancelNoteBtn: document.getElementById('cancelNoteBtn')
+    };
+
+    let goals = [], currentGoalId = null, notes = [];
+    const profileRef = database.ref('userProfile'), notesRef = database.ref('notes');
+
+    /* ---- PWA Install Banner (auto after 2s) ---- */
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', e => {
+        console.log('Install prompt ready');
+        e.preventDefault();
+        deferredPrompt = e;
+        setTimeout(() => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(c => { console.log('Install:', c.outcome); deferredPrompt = null; });
+            }
+        }, 2000);
+    });
+
+    /* ---- Utility ---- */
+    const formatCurrency = a => isNaN(a) ? '0' : a.toLocaleString('en-IN');
+    const getCategoryInfo = c => ({
+        name: {health:'Health',career:'Career',finance:'Finance',personal:'Personal Growth'}[c]||'Other',
+        color: {health:'bg-green-900 text-green-300',career:'bg-purple-900 text-purple-300',finance:'bg-blue-900 text-blue-300',personal:'bg-pink-900 text-pink-300'}[c]||'bg-gray-900 text-gray-300'
+    });
+    const debounce = (fn, wait) => { let t; return (...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),wait);}; };
+    const openModal = (m,t,tt,s,st,f)=>{t.textContent=tt;s.textContent=st;m.classList.remove('hidden');f.focus();};
+    const closeModal = (m,f,e=[])=>{m.classList.add('hidden');f&&f.reset();e.forEach(x=>x.style.display='none');};
+
+    /* ---- Data ---- */
+    const saveData = async (p,d)=>{const u={};d.forEach((i,idx)=>{const s={...i};delete s.timer;delete s.intervalTimer;u[`${p}/${i.id}`]={...s,order:idx};});await database.ref().update(u);};
+    const loadData = async (p,a,proc)=>{el.loadingSpinner.classList.remove('hidden');const s=await database.ref(p).once('value');a.length=0;s.forEach(c=>{const i=c.val();proc(i);a.push(i);});a.sort((x,y)=>x.order-y.order);el.loadingSpinner.classList.add('hidden');};
+
+    /* ---- Goals ---- */
+    const updateGoalProgress = g=>{if(g.category==='finance')g.progress=g.targetAmount?Math.min(100,Math.round((g.currentAmount||0)/g.targetAmount*100)):0;else g.progress=g.milestones?Math.round(g.milestones.filter(m=>m.completed).length/g.milestones.length*100):0;};
+    const renderGoalCard = g=>{
+        const {name,color}=getCategoryInfo(g.category);
+        const card=document.createElement('div');card.className='card goal-card p-5 rounded-xl';card.dataset.id=g.id;card.draggable=true;
+        card.innerHTML=`<div class="flex items-start justify-between mb-2"><h3 class="text-lg font-semibold text-gray-200">${g.title}</h3><span class="text-sm px-2 py-1 rounded-full ${color}">${name}</span></div>
+            <p class="text-sm mb-3 text-gray-400">${g.description||''}</p>
+            <div class="flex justify-between mb-1"><span class="text-sm font-medium text-blue-400">Progress</span><span class="text-sm text-gray-200">${g.progress}%</span></div>
+            <div class="w-full bg-gray-600 rounded-full h-2.5"><div class="bg-blue-500 h-2.5 rounded-full progress-bar" style="width:${g.progress}%"></div></div>
+            ${g.category==='finance'?`<div class="text-xs mt-2 text-gray-400">Current: ₹${formatCurrency(g.currentAmount)} / ₹${formatCurrency(g.targetAmount)}</div>`:''}`;
+        return card;
+    };
+    const renderGoals = ()=>{
+        el.goalsContainer.innerHTML=''; goals.forEach(g=>el.goalsContainer.appendChild(renderGoalCard(g)));
+        if(goals.length){
+            const add=document.createElement('div');add.className='card rounded-xl p-5 flex items-center justify-center';
+            add.innerHTML=`<button id="addMoreGoalsBtn" class="btn btn-primary w-full h-full text-lg font-semibold">+ Add More Goals</button>`;
+            el.goalsContainer.appendChild(add);
+            setTimeout(()=>{document.getElementById('addMoreGoalsBtn').addEventListener('click',()=>openModal(el.goalModal,el.modalTitle,'Create New Goal',el.submitGoalBtn,'Create Goal',el.goalTitle));},0);
+            el.goalsContainer.classList.remove('hidden'); el.noGoalsMessage.classList.add('hidden');
+        }else{el.goalsContainer.classList.add('hidden'); el.noGoalsMessage.classList.remove('hidden');}
+    };
+    const openGoalDetail = id=>{currentGoalId=id;/* update modal here if needed */ el.goalDetailModal.classList.remove('hidden');};
+
+    /* ---- Profile & Notes (simplified) ---- */
+    el.saveProfileBtn.addEventListener('click',()=>{profileRef.set({name:el.userName.value.trim()||'Anonymous',height:parseInt(el.userHeight.value)||null,weight:parseFloat(el.userWeight.value)||null});alert('Saved');});
+    el.addNoteBtn.addEventListener('click',()=>{openModal(el.noteModal,el.noteModalTitle,'New Note',el.noteForm.querySelector('button[type=submit]'),'Save Note',el.noteTitle);});
+    el.noteForm.addEventListener('submit',e=>{e.preventDefault();const id=el.noteId.value||notesRef.push().key;notesRef.child(id).set({title:el.noteTitle.value.trim()||'Untitled',content:el.noteContent.value.trim(),timestamp:Date.now()});closeModal(el.noteModal,el.noteForm);});
+
+    /* ---- Init ---- */
+    const init = async ()=>{
+        await loadData('goals',goals,g=>{g.milestones=g.milestones||[];g.order=Number(g.order)||0;updateGoalProgress(g);});
+        renderGoals();
+        el.tabBtns.forEach(b=>b.addEventListener('click',()=>{el.tabBtns.forEach(x=>{x.classList.remove('active','border-b-2','border-blue-400','text-blue-400');x.classList.add('text-gray-400');});b.classList.add('active','border-b-2','border-blue-400','text-blue-400');b.classList.remove('text-gray-400');document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));document.getElementById(b.dataset.tab).classList.add('active');}));
+        el.createFirstGoalBtn.addEventListener('click',()=>openModal(el.goalModal,el.modalTitle,'Create New Goal',el.submitGoalBtn,'Create Goal',el.goalTitle));
+        el.closeModalBtn.addEventListener('click',()=>closeModal(el.goalModal,el.goalForm,[el.goalTitleError,el.goalCategoryError,el.targetAmountError]));
+        el.cancelGoalBtn.addEventListener('click',()=>closeModal(el.goalModal,el.goalForm,[el.goalTitleError,el.goalCategoryError,el.targetAmountError]));
+        el.closeDetailModalBtn.addEventListener('click',()=>closeModal(el.goalDetailModal));
+    };
+    init();
+}
+
+/* ==================== START APP ==================== */
+initApp();
+
+/* ==================== SERVICE WORKER ==================== */
+if('serviceWorker' in navigator){
+    window.addEventListener('load',()=>{
+        navigator.serviceWorker.register('/dreamit/sw.js',{scope:'/dreamit/'})
+            .then(r=>console.log('SW registered:',r.scope))
+            .catch(e=>console.error('SW error:',e));
+    });
+}
+</script>
+</body>
+</html>
