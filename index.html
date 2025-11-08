@@ -162,7 +162,25 @@
             </div>
             <p class="text-gray-300 mt-2">Your companion for reaching your goals</p>
         </header>
+       <button id="pwaInstallBtn" class="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-50">
+  Install Dreamit
+</button>
 
+<script>
+let installPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  installPrompt = e;
+  document.getElementById('pwaInstallBtn').style.display = 'block';
+});
+
+document.getElementById('pwaInstallBtn').addEventListener('click', () => {
+  installPrompt.prompt();
+  installPrompt.userChoice.then(() => {
+    document.getElementById('pwaInstallBtn').style.display = 'none';
+  });
+});
+</script>
         <!-- Navigation -->
         <nav class="mb-8 border-b" style="border-color: #4b5563;">
             <ul class="nav-tabs flex space-x-4 sm:space-x-8 overflow-x-auto md:overflow-visible">
@@ -1150,6 +1168,7 @@
     </script>
 </body>
 </html>
+
 
 
 
