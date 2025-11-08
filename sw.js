@@ -21,7 +21,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.mode === 'navigate') {
     e.respondWith(
-      caches.match('/dreamit/index.html').then(r => r || fetch(e.request))
+      caches.match('/dreamit/').then(r => r || fetch(e.request))
     );
   } else {
     e.respondWith(
@@ -29,3 +29,4 @@ self.addEventListener('fetch', e => {
     );
   }
 });
+
