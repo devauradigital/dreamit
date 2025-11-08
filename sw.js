@@ -1,4 +1,3 @@
-// sw.js for GitHub Pages (subpath /dreamit/)
 const CACHE = 'dreamit-v1';
 
 self.addEventListener('install', e => {
@@ -27,3 +26,4 @@ self.addEventListener('fetch', e => {
     e.respondWith(caches.match(req).then(r => r || fetch(req)));
   }
 });
+
