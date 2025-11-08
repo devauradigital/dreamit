@@ -287,15 +287,46 @@ function initApp() {
 /* ==================== START APP ==================== */
 initApp();
 
-/* ==================== SERVICE WORKER ==================== */
-if('serviceWorker' in navigator){
-    window.addEventListener('load',()=>{
-        navigator.serviceWorker.register('/dreamit/sw.js',{scope:'/dreamit/'})
-            .then(r=>console.log('SW registered:',r.scope))
-            .catch(e=>console.error('SW error:',e));
-    });
-}
+<script>
+/* ==================== PWA DEBUG + INSTALL ==================== */
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  console.log('beforeinstallprompt FIRED!');
+  e.preventDefault();
+  deferredPrompt = e;
+
+  // Show banner after 3 seconds
+  setTimeout(() => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choice) => {
+        console.log('User choice:', choice.outcome);
+        deferredPrompt = null;
+      });
+    }
+  }, 3000);
+});
+
+// Debug: Check if PWA criteria are met
+window.addEventListener('load', () => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/dreamit/sw.js', { scope: '/dreamit/' })
+      .then(reg => {
+        console.log('SW registered:', reg.scope);
+        // Force check
+        setTimeout(() => {
+          if (!deferredPrompt) {
+            console.warn('beforeinstallprompt did NOT fire. PWA criteria not met.');
+          }
+        }, 5000);
+      })
+      .catch(err => console.error('SW failed:', err));
+  }
+});
+</script>
 </script>
 </body>
 </html>
+
 
