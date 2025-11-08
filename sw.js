@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dreamit-v1';
+const CACHE_NAME = 'dreamit-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -39,3 +39,4 @@ self.addEventListener('fetch', event => {
       .then(response => response || fetch(event.request))
   );
 });
+
