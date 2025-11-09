@@ -149,6 +149,38 @@
                 max-height: 350px;
             }
         }
+
+        /* LETTER-BY-LETTER ANIMATION */
+        #motivationalLine {
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+            white-space: nowrap;
+            min-height: 1.5em;
+            text-align: left;
+            width: 100%;
+        }
+        #motivationalLine span {
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: revealWord 0.5s ease forwards;
+        }
+        @keyframes revealWord {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        #motivationalLine.fade-out span {
+            animation: fadeOutWord 0.4s ease forwards;
+        }
+        @keyframes fadeOutWord {
+            to {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
     </style>
 </head>
 
@@ -160,7 +192,11 @@
                     <img src="navbarlogo.png" alt="Goal Tracker Logo" class="h-10 w-auto">
                 </div>
             </div>
-            <p class="text-gray-300 mt-2">Your companion for reaching your goals</p>
+
+            <!-- MOTIVATIONAL LINE WITH LETTER ANIMATION -->
+            <p class="text-gray-300 mt-2 text-left">
+                <span id="motivationalLine"></span>
+            </p>
         </header>
 
         <!-- Navigation -->
@@ -382,7 +418,7 @@
             alert('Firebase failed to start.');
         }
 
-        // Password Overlay (with name)
+        // Password Overlay
         const passwordOverlayHTML = `
             <div id="pwdOverlay" class="fixed inset-0 bg-gradient-to-br from-blue-900 via-blue-700 to-indigo-800 flex items-center justify-center z-[9999] p-4">
                 <div class="card rounded-2xl p-8 w-full max-w-md mx-auto shadow-2xl bg-gray-900/95 backdrop-blur-sm border border-blue-700/30">
@@ -414,7 +450,6 @@
         const pwdSubmit = document.getElementById('pwdSubmit');
         const pwdError = document.getElementById('pwdError');
 
-        // Update welcome name
         async function updateWelcomeName() {
             const profileRef = database.ref('userProfile');
             const snap = await profileRef.once('value');
@@ -475,7 +510,8 @@
             pwdOverlay.remove();
             document.body.style.visibility = 'visible';
             initApp();
-            updateWelcomeName(); // Show name after unlock
+            updateWelcomeName();
+            startMotivationalRotator(); // Start animation after unlock
         }
 
         pwdSubmit.addEventListener('click', attemptUnlock);
@@ -483,8 +519,6 @@
 
         document.body.style.visibility = 'hidden';
         pwdOverlay.style.visibility = 'visible';
-
-        // Load name on first render
         updateWelcomeName();
 
         // MAIN APP
@@ -554,7 +588,6 @@
             const profileRef = database.ref('userProfile');
             const notesRef = database.ref('notes');
 
-            // Utility Functions
             const formatCurrency = (amount) => isNaN(amount) ? '0' : amount.toLocaleString('en-IN');
             const getCategoryInfo = (category) => ({
                 name: ({ health: 'Health', career: 'Career', finance: 'Finance', personal: 'Personal Growth' }[category] || 'Other'),
@@ -617,7 +650,6 @@
                 return !hasError;
             };
 
-            // Data Management
             const saveData = async (path, data) => {
                 if (!database) throw new Error('Database not initialized');
                 const updates = {};
@@ -648,7 +680,6 @@
                 }
             };
 
-            // Goal Functions
             const updateGoalProgress = (goal) => {
                 if (!goal) return;
                 if (goal.category === 'finance') {
@@ -666,6 +697,7 @@
                 if (currentGoalId === goal.id) updateGoalDetailModal(goal);
                 updateGoalCard(goal);
             };
+
             const updateGoalCard = (goal) => {
                 if (!goal) return;
                 const goalCard = elements.goalsContainer.querySelector(`.goal-card[data-id="${goal.id}"]`);
@@ -681,6 +713,7 @@
                     if (financeTarget) financeTarget.textContent = `Current: ₹${formatCurrency(goal.currentAmount)} / ₹${formatCurrency(goal.targetAmount)}`;
                 }
             };
+
             const updateGoalDetailModal = (goal) => {
                 if (!goal) return;
                 const { name, color } = getCategoryInfo(goal.category);
@@ -750,6 +783,7 @@
                     }
                 }
             };
+
             const renderGoalCard = (goal) => {
                 const { name, color } = getCategoryInfo(goal.category);
                 const goalCard = document.createElement('div');
@@ -818,6 +852,7 @@
                 });
                 return goalCard;
             };
+
             const renderGoals = () => {
                 if (!elements.goalsContainer || !elements.noGoalsMessage) return;
                 elements.goalsContainer.innerHTML = '';
@@ -850,6 +885,7 @@
                     elements.noGoalsMessage.classList.remove('hidden');
                 }
             };
+
             const openGoalDetail = (id) => {
                 const goal = goals.find(g => g.id === id);
                 if (!goal || !elements.goalDetailModal || !elements.detailGoalTitle) return;
@@ -858,6 +894,7 @@
                 elements.goalDetailModal.classList.remove('hidden');
                 elements.detailGoalTitle.focus();
             };
+
             const updateCategoryFields = (category) => {
                 if (elements.financeAmountField && elements.targetAmountInput) {
                     elements.financeAmountField.classList.toggle('hidden', category !== 'finance');
@@ -865,7 +902,6 @@
                 }
             };
 
-            // Profile & Notes
             async function loadProfile() {
                 const snap = await profileRef.once('value');
                 const data = snap.val();
@@ -884,7 +920,7 @@
                 };
                 await profileRef.set(profile);
                 alert('Profile saved!');
-                updateWelcomeName(); // Update name on password screen
+                updateWelcomeName();
             });
 
             async function loadNotes() {
@@ -967,7 +1003,6 @@
             elements.cancelNoteBtn.addEventListener('click', () => closeModal(elements.noteModal, elements.noteForm));
             elements.noteForm.addEventListener('submit', saveNote);
 
-            // Event Listeners
             const setupEventListeners = () => {
                 if (elements.goalCategorySelect) {
                     elements.goalCategorySelect.addEventListener('change', () => updateCategoryFields(elements.goalCategorySelect.value));
@@ -1136,16 +1171,69 @@
             };
             init();
         }
+
+        // MOTIVATIONAL LINE WITH LETTER-BY-LETTER ANIMATION
+        const motivationalLines = [
+            "Your companion for reaching your goals.",
+            "Dream big, achieve bigger!",
+            "Every step counts - keep moving!",
+            "Turn your vision into reality.",
+            "Progress, not perfection.",
+            "Believe. Achieve. Succeed.",
+            "Small wins build unstoppable momentum.",
+            "Your future self will thank you."
+        ];
+
+        let lineIndex = 0;
+        const lineEl = document.getElementById('motivationalLine');
+
+        function typeWriter(text, onComplete) {
+    lineEl.innerHTML = '';
+    const words = text.split(' ');
+    let i = 0;
+    const interval = setInterval(() => {
+        if (i < words.length) {
+            const span = document.createElement('span');
+            span.textContent = words[i];
+            span.style.animationDelay = `${i * 150}ms`; // Stagger words
+            span.style.display = 'inline-block';
+            lineEl.appendChild(span);
+
+            // Add space after word (except last)
+            if (i < words.length - 1) {
+                lineEl.appendChild(document.createTextNode(' '));
+            }
+            i++;
+        } else {
+            clearInterval(interval);
+            if (onComplete) setTimeout(onComplete, 3000);
+        }
+    }, 150);
+}
+
+        function rotateLine() {
+            lineEl.classList.add('fade-out');
+            setTimeout(() => {
+                lineEl.classList.remove('fade-out');
+                lineIndex = (lineIndex + 1) % motivationalLines.length;
+                typeWriter(motivationalLines[lineIndex], rotateLine);
+            }, 400);
+        }
+
+        function startMotivationalRotator() {
+            typeWriter(motivationalLines[0], () => {
+                setTimeout(rotateLine, 3000);
+            });
+        }
+
+        // Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/dreamit/sw.js', { scope: '/dreamit/' })
+                    .then(reg => console.log('SW registered:', reg.scope))
+                    .catch(err => console.error('SW failed:', err));
+            });
+        }
     </script>
-    <!-- SERVICE WORKER REGISTRATION -->
-  <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/dreamit/sw.js', { scope: '/dreamit/' })
-        .then(reg => console.log('SW registered:', reg.scope))
-        .catch(err => console.error('SW failed:', err));
-    });
-  }
-</script>
-  </body>
+</body>
 </html>
