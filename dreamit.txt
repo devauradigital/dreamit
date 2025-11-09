@@ -8,9 +8,10 @@ index.html
     <meta name="theme-color" content="#3b82f6">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Dreamit">
     
     <title>Dreamit</title>
-    <link rel="manifest" href="/site.webmanifest">
+    <link rel="manifest" href="/dreamit/site.webmanifest">
     <link rel="apple-touch-icon" href="/navbarlogo.png">
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -189,7 +190,7 @@ index.html
         <!-- Settings Tab -->
         <div id="settings" class="tab-content hidden">
             <!-- User Profile -->
-            <div class="card p-6 mb-6">
+            <div class="card p-6 mb-6 rounded-2xl shadow-lg">
                 <h3 class="text-xl font-semibold mb-4 text-gray-200">Profile</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -211,7 +212,7 @@ index.html
             </div>
 
             <!-- Notes Section -->
-            <div class="card p-6">
+            <div class="card p-6 rounded-2xl">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xl font-semibold text-gray-200">My Notes</h3>
                     <button id="addNoteBtn" class="btn btn-primary text-sm">+ New Note</button>
@@ -1138,9 +1139,18 @@ index.html
             init();
         }
     </script>
-</body>
+    <!-- SERVICE WORKER REGISTRATION -->
+  <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/dreamit/sw.js', { scope: '/dreamit/' })
+        .then(reg => console.log('SW registered:', reg.scope))
+        .catch(err => console.error('SW failed:', err));
+    });
+  }
+</script>
+  </body>
 </html>
-
 
 
 site.manifest
@@ -1253,5 +1263,6 @@ self.addEventListener('notificationclick', event => {
     })
   );
 });
+
 
 
