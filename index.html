@@ -181,6 +181,33 @@
                 transform: translateY(-10px);
             }
         }
+        /* === CUSTOM SCROLLBAR – Minimal & Dark Theme === */
+.milestones-scroll-container::-webkit-scrollbar {
+    width: 8px;                     /* Thin scrollbar */
+}
+
+.milestones-scroll-container::-webkit-scrollbar-track {
+    background: transparent;        /* No background */
+    border-radius: 4px;
+}
+
+.milestones-scroll-container::-webkit-scrollbar-thumb {
+    background: #3b82f6;  /* slate-500 with opacity */
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+.milestones-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #3b82f6;  /* Slightly brighter on hover */
+    background-clip: content-box;
+}
+
+/* Firefox support */
+.milestones-scroll-container {
+    scrollbar-width: thin;
+    scrollbar-color: #3b82f6 transparent;
+}
     </style>
 </head>
 
@@ -715,74 +742,108 @@
             };
 
             const updateGoalDetailModal = (goal) => {
-                if (!goal) return;
-                const { name, color } = getCategoryInfo(goal.category);
-                if (elements.detailGoalTitle) elements.detailGoalTitle.textContent = goal.title || 'Untitled';
-                if (elements.detailDescription) elements.detailDescription.textContent = goal.description || '';
-                if (elements.detailCategory) {
-                    elements.detailCategory.textContent = name;
-                    elements.detailCategory.className = `px-2 py-1 text-xs rounded-full ${color}`;
+    if (!goal) return;
+    const { name, color } = getCategoryInfo(goal.category);
+    if (elements.detailGoalTitle) elements.detailGoalTitle.textContent = goal.title || 'Untitled';
+    if (elements.detailDescription) elements.detailDescription.textContent = goal.description || '';
+    if (elements.detailCategory) {
+        elements.detailCategory.textContent = name;
+        elements.detailCategory.className = `px-2 py-1 text-xs rounded-full ${color}`;
+    }
+    if (elements.progressPercentage) elements.progressPercentage.textContent = `${goal.progress}%`;
+    if (elements.detailProgressBar) elements.detailProgressBar.style.width = `${goal.progress}%`;
+    if (elements.milestoneSection) elements.milestoneSection.classList.toggle('hidden', goal.category === 'finance');
+    if (elements.financeSliderSection) elements.financeSliderSection.classList.toggle('hidden', goal.category !== 'finance');
+    if (elements.financeProgressText) elements.financeProgressText.classList.toggle('hidden', goal.category !== 'finance');
+    if (goal.category === 'finance') {
+        const target = goal.targetAmount || 10000;
+        if (elements.currentAmountSlider) {
+            elements.currentAmountSlider.max = target;
+            elements.currentAmountSlider.value = goal.currentAmount || 0;
+        }
+        if (elements.currentAmountInput) {
+            elements.currentAmountInput.max = target;
+            elements.currentAmountInput.value = goal.currentAmount || 0;
+        }
+        if (elements.currentAmountLabel) elements.currentAmountLabel.textContent = `₹${formatCurrency(goal.currentAmount || 0)}`;
+        if (elements.targetAmountLabel) elements.targetAmountLabel.textContent = `₹${formatCurrency(target)}`;
+        if (elements.currentAmountDisplay) elements.currentAmountDisplay.textContent = formatCurrency(goal.currentAmount || 0);
+        if (elements.targetAmountDisplay) elements.targetAmountDisplay.textContent = formatCurrency(target);
+    } else {
+        if (elements.milestonesList) {
+            /* ---- NEW: create a scrollable wrapper ---- */
+            elements.milestonesList.innerHTML = `
+                <div class="milestones-scroll-container max-h-56 overflow-y-auto pr-2 space-y-2">
+                    <!-- milestones will be injected here -->
+                </div>
+            `;
+            const scrollContainer = elements.milestonesList.querySelector('.milestones-scroll-container');
+
+            (goal.milestones || []).forEach(milestone => {
+                const milestoneItem = document.createElement('div');
+                milestoneItem.className = 'flex items-center space-x-2';
+                milestoneItem.innerHTML = `
+                    <input type="checkbox" id="milestone-${milestone.id}" class="milestone-checkbox" ${milestone.completed ? 'checked' : ''} aria-label="${milestone.text}">
+                    <label for="milestone-${milestone.id}" class="flex-grow" style="color: ${milestone.completed ? '#9ca3af' : '#e5e7eb'}; ${milestone.completed ? 'text-decoration: line-through;' : ''}">${milestone.text}</label>
+
+                    <!-- Edit button -->
+                    <button class="edit-milestone-btn text-blue-400" data-id="${milestone.id}" title="Edit milestone" aria-label="Edit milestone">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                    </button>
+
+                    <!-- Delete button (cross) -->
+                    <button class="delete-milestone-btn text-red-400" data-id="${milestone.id}" title="Delete milestone" aria-label="Delete milestone">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                `;
+                scrollContainer.appendChild(milestoneItem);
+
+                // ---- Checkbox ----
+                const checkbox = milestoneItem.querySelector('.milestone-checkbox');
+                if (checkbox) {
+                    checkbox.addEventListener('change', (e) => {
+                        milestone.completed = e.target.checked;
+                        updateGoalProgress(goal);
+                        saveData('goals', goals);
+                        renderGoals();
+                    });
                 }
-                if (elements.progressPercentage) elements.progressPercentage.textContent = `${goal.progress}%`;
-                if (elements.detailProgressBar) elements.detailProgressBar.style.width = `${goal.progress}%`;
-                if (elements.milestoneSection) elements.milestoneSection.classList.toggle('hidden', goal.category === 'finance');
-                if (elements.financeSliderSection) elements.financeSliderSection.classList.toggle('hidden', goal.category !== 'finance');
-                if (elements.financeProgressText) elements.financeProgressText.classList.toggle('hidden', goal.category !== 'finance');
-                if (goal.category === 'finance') {
-                    const target = goal.targetAmount || 10000;
-                    if (elements.currentAmountSlider) {
-                        elements.currentAmountSlider.max = target;
-                        elements.currentAmountSlider.value = goal.currentAmount || 0;
-                    }
-                    if (elements.currentAmountInput) {
-                        elements.currentAmountInput.max = target;
-                        elements.currentAmountInput.value = goal.currentAmount || 0;
-                    }
-                    if (elements.currentAmountLabel) elements.currentAmountLabel.textContent = `₹${formatCurrency(goal.currentAmount || 0)}`;
-                    if (elements.targetAmountLabel) elements.targetAmountLabel.textContent = `₹${formatCurrency(target)}`;
-                    if (elements.currentAmountDisplay) elements.currentAmountDisplay.textContent = formatCurrency(goal.currentAmount || 0);
-                    if (elements.targetAmountDisplay) elements.targetAmountDisplay.textContent = formatCurrency(target);
-                } else {
-                    if (elements.milestonesList) {
-                        elements.milestonesList.innerHTML = '';
-                        (goal.milestones || []).forEach(milestone => {
-                            const milestoneItem = document.createElement('div');
-                            milestoneItem.className = 'flex items-center';
-                            milestoneItem.innerHTML = `
-                                <input type="checkbox" id="milestone-${milestone.id}" class="milestone-checkbox" ${milestone.completed ? 'checked' : ''} aria-label="${milestone.text}">
-                                <label for="milestone-${milestone.id}" class="flex-grow" style="color: ${milestone.completed ? '#9ca3af' : '#e5e7eb'}; ${milestone.completed ? 'text-decoration: line-through;' : ''}">${milestone.text}</label>
-                                <button class="edit-milestone-btn text-blue-400" data-id="${milestone.id}" title="Edit milestone" aria-label="Edit milestone">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                </button>
-                            `;
-                            elements.milestonesList.appendChild(milestoneItem);
-                            const checkbox = milestoneItem.querySelector('.milestone-checkbox');
-                            if (checkbox) {
-                                checkbox.addEventListener('change', (e) => {
-                                    milestone.completed = e.target.checked;
-                                    updateGoalProgress(goal);
-                                    saveData('goals', goals);
-                                    renderGoals();
-                                });
-                            }
-                            const editBtn = milestoneItem.querySelector('.edit-milestone-btn');
-                            if (editBtn) {
-                                editBtn.addEventListener('click', () => {
-                                    const newText = prompt('Edit milestone:', milestone.text);
-                                    if (newText && newText.trim()) {
-                                        milestone.text = newText.trim();
-                                        updateGoalDetailModal(goal);
-                                        saveData('goals', goals);
-                                        renderGoals();
-                                    }
-                                });
-                            }
-                        });
-                    }
+
+                // ---- Edit ----
+                const editBtn = milestoneItem.querySelector('.edit-milestone-btn');
+                if (editBtn) {
+                    editBtn.addEventListener('click', () => {
+                        const newText = prompt('Edit milestone:', milestone.text);
+                        if (newText && newText.trim()) {
+                            milestone.text = newText.trim();
+                            updateGoalDetailModal(goal);
+                            saveData('goals', goals);
+                            renderGoals();
+                        }
+                    });
                 }
-            };
+
+                // ---- Delete ----
+                const deleteBtn = milestoneItem.querySelector('.delete-milestone-btn');
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', () => {
+                        if (confirm('Delete this milestone?')) {
+                            goal.milestones = goal.milestones.filter(m => m.id !== milestone.id);
+                            updateGoalProgress(goal);
+                            saveData('goals', goals);
+                            updateGoalDetailModal(goal);
+                            renderGoals();
+                        }
+                    });
+                }
+            });
+        }
+    }
+};
 
             const renderGoalCard = (goal) => {
                 const { name, color } = getCategoryInfo(goal.category);
