@@ -7,16 +7,13 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Dreamit">
-    
     <title>Dreamit</title>
     <link rel="manifest" href="/dreamit/site.webmanifest">
     <link rel="apple-touch-icon" href="/navbarlogo.png">
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
         body {
@@ -35,7 +32,7 @@
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
         }
         .goal-card {
-            cursor: pointer;
+            cursor: grab;
         }
         .goal-card.dragging {
             opacity: 0.5;
@@ -149,7 +146,6 @@
                 max-height: 350px;
             }
         }
-
         /* LETTER-BY-LETTER ANIMATION */
         #motivationalLine {
             display: inline-block;
@@ -181,36 +177,43 @@
                 transform: translateY(-10px);
             }
         }
-        /* === CUSTOM SCROLLBAR – Minimal & Dark Theme === */
-.milestones-scroll-container::-webkit-scrollbar {
-    width: 8px;                     /* Thin scrollbar */
-}
-
-.milestones-scroll-container::-webkit-scrollbar-track {
-    background: transparent;        /* No background */
-    border-radius: 4px;
-}
-
-.milestones-scroll-container::-webkit-scrollbar-thumb {
-    background: #3b82f6;  /* slate-500 with opacity */
-    border-radius: 4px;
-    border: 2px solid transparent;
-    background-clip: content-box;
-}
-
-.milestones-scroll-container::-webkit-scrollbar-thumb:hover {
-    background: #3b82f6;  /* Slightly brighter on hover */
-    background-clip: content-box;
-}
-
-/* Firefox support */
-.milestones-scroll-container {
-    scrollbar-width: thin;
-    scrollbar-color: #3b82f6 transparent;
-}
+        /* CUSTOM SCROLLBAR – MILESTONES */
+        .milestones-scroll-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .milestones-scroll-container::-webkit-scrollbar-track {
+            background: transparent;
+            border-radius: 4px;
+        }
+        .milestones-scroll-container::-webkit-scrollbar-thumb {
+            background: rgba(100, 116, 139, 0.5);
+            border-radius: 4px;
+            border: 2px solid transparent;
+            background-clip: content-box;
+        }
+        .milestones-scroll-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 116, 139, 0.8);
+            background-clip: content-box;
+        }
+        .milestones-scroll-container {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(100, 116, 139, 0.5) transparent;
+        }
+        /* LINE CLAMP */
+        .line-clamp-3 {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        /* PRESERVE LINE BREAKS + POPPINS */
+        .preserve-breaks {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Poppins', sans-serif !important;
+        }
     </style>
 </head>
-
 <body class="min-h-screen">
     <div class="container mx-auto px-4 py-8 max-w-6xl">
         <header class="mb-10">
@@ -219,21 +222,17 @@
                     <img src="navbarlogo.png" alt="Goal Tracker Logo" class="h-10 w-auto">
                 </div>
             </div>
-
-            <!-- MOTIVATIONAL LINE WITH LETTER ANIMATION -->
             <p class="text-gray-300 mt-2 text-left">
                 <span id="motivationalLine"></span>
             </p>
         </header>
-
         <!-- Navigation -->
         <nav class="mb-8 border-b" style="border-color: #4b5563;">
             <ul class="nav-tabs flex space-x-4 sm:space-x-8 overflow-x-auto md:overflow-visible">
-                <li><button class="tab-btn active py-2 px-1 border-b-2 border-blue-400 text-blue-400 text-sm sm:text-base" data-tab="dashboard" aria-selected="true">Dashboard</button></li>
-                <li class="ml-auto"><button class="tab-btn py-2 px-1 text-gray-400 text-sm sm:text-base" data-tab="settings" aria-selected="false">Settings</button></li>
+                <li><button class="tab-btn active py-2 px-1 border-b-2 border-blue-400 text-blue-400 text-sm sm:text-base" data-tab="dashboard">Dashboard</button></li>
+                <li class="ml-auto"><button class="tab-btn py-2 px-1 text-gray-400 text-sm sm:text-base" data-tab="settings">Settings</button></li>
             </ul>
         </nav>
-
         <!-- Dashboard Tab -->
         <div id="dashboard" class="tab-content active">
             <div id="loadingSpinner" class="loading-spinner">
@@ -247,13 +246,29 @@
                 <button id="createFirstGoalBtn" class="btn btn-primary">Create Your First Goal</button>
             </div>
         </div>
-
         <!-- Settings Tab -->
         <div id="settings" class="tab-content hidden">
             <!-- User Profile -->
             <div class="card p-6 mb-6 rounded-2xl shadow-lg">
-                <h3 class="text-xl font-semibold mb-4 text-gray-200">Profile</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex justify-between items-center mb-5">
+                    <h3 class="text-xl font-semibold text-gray-200">Profile</h3>
+                    <button id="editProfileBtn" class="btn btn-secondary text-sm flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit
+                    </button>
+                </div>
+                <!-- Profile View: One Line on Desktop -->
+                <div id="profileView" class="text-sm text-gray-300">
+                    <span class="block sm:inline">Name: <span id="viewName" class="font-medium">—</span></span>
+                    <span class="hidden sm:inline mx-2">•</span>
+                    <span class="block sm:inline">Height: <span id="viewHeight" class="font-medium">—</span></span>
+                    <span class="hidden sm:inline mx-2">•</span>
+                    <span class="block sm:inline">Weight: <span id="viewWeight" class="font-medium">—</span></span>
+                </div>
+                <!-- Edit Mode -->
+                <div id="profileEdit" class="space-y-4 hidden">
                     <div>
                         <label class="block text-sm font-medium text-gray-400 mb-1">Name</label>
                         <input type="text" id="userName" class="input-field" placeholder="Your name">
@@ -266,22 +281,29 @@
                         <label class="block text-sm font-medium text-gray-400 mb-1">Weight (kg)</label>
                         <input type="number" id="userWeight" class="input-field" min="30" max="200" step="0.1" placeholder="65">
                     </div>
-                    <div class="md:col-span-2">
-                        <button id="saveProfileBtn" class="btn btn-primary mt-2">Save Profile</button>
+                    <div class="flex gap-3 justify-end">
+                        <button id="cancelProfileBtn" class="btn btn-secondary">Cancel</button>
+                        <button id="saveProfileBtn" class="btn btn-primary">Save Profile</button>
                     </div>
                 </div>
             </div>
-
             <!-- Notes Section -->
             <div class="card p-6 rounded-2xl">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-semibold text-gray-200">My Notes</h3>
-                    <button id="addNoteBtn" class="btn btn-primary text-sm">+ New Note</button>
+                <div class="flex justify-between items-center mb-5">
+                    <h3 class="text-xl font-semibold text-gray-200">My NOTES</h3>
+                    <button id="addNoteBtn" class="btn btn-primary text-sm flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        New Note
+                    </button>
                 </div>
-                <div id="notesList" class="space-y-4"></div>
+                <div id="notesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                <div id="noNotesMessage" class="text-center py-10 text-gray-500 hidden">
+                    <p>No notes yet. Create your first one!</p>
+                </div>
             </div>
         </div>
-
         <!-- Goal Modal -->
         <div id="goalModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" role="dialog" aria-labelledby="modalTitle">
             <div class="card rounded-xl p-6 w-full max-w-md mx-4">
@@ -327,7 +349,6 @@
                 </form>
             </div>
         </div>
-
         <!-- Goal Detail Modal -->
         <div id="goalDetailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" role="dialog" aria-labelledby="detailGoalTitle">
             <div class="card rounded-xl p-6 w-full max-w-md mx-4">
@@ -388,7 +409,6 @@
                 </div>
             </div>
         </div>
-
         <!-- Note Modal -->
         <div id="noteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" role="dialog">
             <div class="card rounded-xl p-6 w-full max-w-lg mx-4">
@@ -408,7 +428,7 @@
                     </div>
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-400 mb-1">Content</label>
-                        <textarea id="noteContent" class="textarea-field" rows="6" placeholder="Write your thoughts..."></textarea>
+                        <textarea id="noteContent" class="textarea-field" rows="6" placeholder="Write your thoughts..." style="white-space: pre-wrap; font-family: 'Poppins', sans-serif;"></textarea>
                     </div>
                     <div class="flex justify-end space-x-3">
                         <button type="button" id="cancelNoteBtn" class="btn btn-secondary">Cancel</button>
@@ -417,12 +437,10 @@
                 </form>
             </div>
         </div>
-
         <footer class="mt-10 py-4 text-center text-gray-400">
             <p>Powered By <a href="https://devauradigital.com" target="_blank" class="text-blue-400 hover:text-blue-500 transition">DevAura Digital</a></p>
         </footer>
     </div>
-
     <script>
         // Firebase Config
         const firebaseConfig = {
@@ -435,7 +453,6 @@
             appId: "1:1071901848843:web:55c4186244e40f8b131e0e",
             measurementId: "G-9RD6ZZ02EY"
         };
-
         let database;
         try {
             firebase.initializeApp(firebaseConfig);
@@ -444,7 +461,6 @@
             console.error('Firebase init error', e);
             alert('Firebase failed to start.');
         }
-
         // Password Overlay
         const passwordOverlayHTML = `
             <div id="pwdOverlay" class="fixed inset-0 bg-gradient-to-br from-blue-900 via-blue-700 to-indigo-800 flex items-center justify-center z-[9999] p-4">
@@ -457,7 +473,7 @@
                     </h1>
                     <p class="text-center text-gray-400 mb-8">Enter your Dreamit password</p>
                     <div class="mb-5">
-                        <input type="password" id="pwdInput" 
+                        <input type="password" id="pwdInput"
                                class="input-field w-full text-lg px-4 py-3 rounded-lg bg-gray-800 border border-gray-600 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition"
                                placeholder="••••••••" autofocus>
                     </div>
@@ -471,12 +487,10 @@
                 </div>
             </div>`;
         document.body.insertAdjacentHTML('afterbegin', passwordOverlayHTML);
-
         const pwdOverlay = document.getElementById('pwdOverlay');
         const pwdInput = document.getElementById('pwdInput');
         const pwdSubmit = document.getElementById('pwdSubmit');
         const pwdError = document.getElementById('pwdError');
-
         async function updateWelcomeName() {
             const profileRef = database.ref('userProfile');
             const snap = await profileRef.once('value');
@@ -485,39 +499,32 @@
             const el = document.getElementById('welcomeName');
             if (el) el.textContent = `, ${name}!`;
         }
-
         async function sha256(str) {
             const encoder = new TextEncoder();
             const data = encoder.encode(str);
             const hash = await crypto.subtle.digest('SHA-256', data);
             return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
         }
-
         const PW_PATH = 'appPassword';
         let isUnlocked = false;
-
         async function loadPasswordHash() {
             const snap = await database.ref(PW_PATH).once('value');
             return snap.val();
         }
-
         async function setInitialPassword(pwd) {
             const hash = await sha256(pwd);
             await database.ref(PW_PATH).set(hash);
             return hash;
         }
-
         async function verifyPassword(pwd) {
             const stored = await loadPasswordHash();
             if (!stored) return false;
             const inputHash = await sha256(pwd);
             return inputHash === stored;
         }
-
         async function attemptUnlock() {
             const pwd = pwdInput.value.trim();
             if (!pwd) { pwdError.textContent = 'Password required'; pwdError.style.display='block'; return; }
-
             const stored = await loadPasswordHash();
             if (!stored) {
                 if (confirm('No password exists. Set this as the app password?')) {
@@ -526,28 +533,23 @@
                 }
                 return;
             }
-
             const ok = await verifyPassword(pwd);
             if (ok) unlockApp();
             else { pwdError.textContent = 'Incorrect password'; pwdError.style.display='block'; }
         }
-
         function unlockApp() {
             isUnlocked = true;
             pwdOverlay.remove();
             document.body.style.visibility = 'visible';
             initApp();
             updateWelcomeName();
-            startMotivationalRotator(); // Start animation after unlock
+            startMotivationalRotator();
         }
-
         pwdSubmit.addEventListener('click', attemptUnlock);
         pwdInput.addEventListener('keydown', e => { if (e.key === 'Enter') attemptUnlock(); });
-
         document.body.style.visibility = 'hidden';
         pwdOverlay.style.visibility = 'visible';
         updateWelcomeName();
-
         // MAIN APP
         function initApp() {
             const elements = {
@@ -597,7 +599,8 @@
                 userWeight: document.getElementById('userWeight'),
                 saveProfileBtn: document.getElementById('saveProfileBtn'),
                 addNoteBtn: document.getElementById('addNoteBtn'),
-                notesList: document.getElementById('notesList'),
+                notesGrid: document.getElementById('notesGrid'),
+                noNotesMessage: document.getElementById('noNotesMessage'),
                 noteModal: document.getElementById('noteModal'),
                 noteModalTitle: document.getElementById('noteModalTitle'),
                 noteForm: document.getElementById('noteForm'),
@@ -605,16 +608,21 @@
                 noteTitle: document.getElementById('noteTitle'),
                 noteContent: document.getElementById('noteContent'),
                 closeNoteModal: document.getElementById('closeNoteModal'),
-                cancelNoteBtn: document.getElementById('cancelNoteBtn')
+                cancelNoteBtn: document.getElementById('cancelNoteBtn'),
+                profileView: document.getElementById('profileView'),
+                profileEdit: document.getElementById('profileEdit'),
+                editProfileBtn: document.getElementById('editProfileBtn'),
+                cancelProfileBtn: document.getElementById('cancelProfileBtn'),
+                viewName: document.getElementById('viewName'),
+                viewHeight: document.getElementById('viewHeight'),
+                viewWeight: document.getElementById('viewWeight')
             };
-
             let goals = [];
             let currentGoalId = null;
             let notes = [];
-
+            let currentNoteId = null;
             const profileRef = database.ref('userProfile');
             const notesRef = database.ref('notes');
-
             const formatCurrency = (amount) => isNaN(amount) ? '0' : amount.toLocaleString('en-IN');
             const getCategoryInfo = (category) => ({
                 name: ({ health: 'Health', career: 'Career', finance: 'Finance', personal: 'Personal Growth' }[category] || 'Other'),
@@ -676,7 +684,6 @@
                 });
                 return !hasError;
             };
-
             const saveData = async (path, data) => {
                 if (!database) throw new Error('Database not initialized');
                 const updates = {};
@@ -706,7 +713,6 @@
                     if (elements.loadingSpinner) elements.loadingSpinner.classList.add('hidden');
                 }
             };
-
             const updateGoalProgress = (goal) => {
                 if (!goal) return;
                 if (goal.category === 'finance') {
@@ -724,7 +730,6 @@
                 if (currentGoalId === goal.id) updateGoalDetailModal(goal);
                 updateGoalCard(goal);
             };
-
             const updateGoalCard = (goal) => {
                 if (!goal) return;
                 const goalCard = elements.goalsContainer.querySelector(`.goal-card[data-id="${goal.id}"]`);
@@ -740,111 +745,96 @@
                     if (financeTarget) financeTarget.textContent = `Current: ₹${formatCurrency(goal.currentAmount)} / ₹${formatCurrency(goal.targetAmount)}`;
                 }
             };
-
             const updateGoalDetailModal = (goal) => {
-    if (!goal) return;
-    const { name, color } = getCategoryInfo(goal.category);
-    if (elements.detailGoalTitle) elements.detailGoalTitle.textContent = goal.title || 'Untitled';
-    if (elements.detailDescription) elements.detailDescription.textContent = goal.description || '';
-    if (elements.detailCategory) {
-        elements.detailCategory.textContent = name;
-        elements.detailCategory.className = `px-2 py-1 text-xs rounded-full ${color}`;
-    }
-    if (elements.progressPercentage) elements.progressPercentage.textContent = `${goal.progress}%`;
-    if (elements.detailProgressBar) elements.detailProgressBar.style.width = `${goal.progress}%`;
-    if (elements.milestoneSection) elements.milestoneSection.classList.toggle('hidden', goal.category === 'finance');
-    if (elements.financeSliderSection) elements.financeSliderSection.classList.toggle('hidden', goal.category !== 'finance');
-    if (elements.financeProgressText) elements.financeProgressText.classList.toggle('hidden', goal.category !== 'finance');
-    if (goal.category === 'finance') {
-        const target = goal.targetAmount || 10000;
-        if (elements.currentAmountSlider) {
-            elements.currentAmountSlider.max = target;
-            elements.currentAmountSlider.value = goal.currentAmount || 0;
-        }
-        if (elements.currentAmountInput) {
-            elements.currentAmountInput.max = target;
-            elements.currentAmountInput.value = goal.currentAmount || 0;
-        }
-        if (elements.currentAmountLabel) elements.currentAmountLabel.textContent = `₹${formatCurrency(goal.currentAmount || 0)}`;
-        if (elements.targetAmountLabel) elements.targetAmountLabel.textContent = `₹${formatCurrency(target)}`;
-        if (elements.currentAmountDisplay) elements.currentAmountDisplay.textContent = formatCurrency(goal.currentAmount || 0);
-        if (elements.targetAmountDisplay) elements.targetAmountDisplay.textContent = formatCurrency(target);
-    } else {
-        if (elements.milestonesList) {
-            /* ---- NEW: create a scrollable wrapper ---- */
-            elements.milestonesList.innerHTML = `
-                <div class="milestones-scroll-container max-h-56 overflow-y-auto pr-2 space-y-2">
-                    <!-- milestones will be injected here -->
-                </div>
-            `;
-            const scrollContainer = elements.milestonesList.querySelector('.milestones-scroll-container');
-
-            (goal.milestones || []).forEach(milestone => {
-                const milestoneItem = document.createElement('div');
-                milestoneItem.className = 'flex items-center space-x-2';
-                milestoneItem.innerHTML = `
-                    <input type="checkbox" id="milestone-${milestone.id}" class="milestone-checkbox" ${milestone.completed ? 'checked' : ''} aria-label="${milestone.text}">
-                    <label for="milestone-${milestone.id}" class="flex-grow" style="color: ${milestone.completed ? '#9ca3af' : '#e5e7eb'}; ${milestone.completed ? 'text-decoration: line-through;' : ''}">${milestone.text}</label>
-
-                    <!-- Edit button -->
-                    <button class="edit-milestone-btn text-blue-400" data-id="${milestone.id}" title="Edit milestone" aria-label="Edit milestone">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                    </button>
-
-                    <!-- Delete button (cross) -->
-                    <button class="delete-milestone-btn text-red-400" data-id="${milestone.id}" title="Delete milestone" aria-label="Delete milestone">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                `;
-                scrollContainer.appendChild(milestoneItem);
-
-                // ---- Checkbox ----
-                const checkbox = milestoneItem.querySelector('.milestone-checkbox');
-                if (checkbox) {
-                    checkbox.addEventListener('change', (e) => {
-                        milestone.completed = e.target.checked;
-                        updateGoalProgress(goal);
-                        saveData('goals', goals);
-                        renderGoals();
-                    });
+                if (!goal) return;
+                const { name, color } = getCategoryInfo(goal.category);
+                if (elements.detailGoalTitle) elements.detailGoalTitle.textContent = goal.title || 'Untitled';
+                if (elements.detailDescription) elements.detailDescription.textContent = goal.description || '';
+                if (elements.detailCategory) {
+                    elements.detailCategory.textContent = name;
+                    elements.detailCategory.className = `px-2 py-1 text-xs rounded-full ${color}`;
                 }
-
-                // ---- Edit ----
-                const editBtn = milestoneItem.querySelector('.edit-milestone-btn');
-                if (editBtn) {
-                    editBtn.addEventListener('click', () => {
-                        const newText = prompt('Edit milestone:', milestone.text);
-                        if (newText && newText.trim()) {
-                            milestone.text = newText.trim();
-                            updateGoalDetailModal(goal);
-                            saveData('goals', goals);
-                            renderGoals();
-                        }
-                    });
+                if (elements.progressPercentage) elements.progressPercentage.textContent = `${goal.progress}%`;
+                if (elements.detailProgressBar) elements.detailProgressBar.style.width = `${goal.progress}%`;
+                if (elements.milestoneSection) elements.milestoneSection.classList.toggle('hidden', goal.category === 'finance');
+                if (elements.financeSliderSection) elements.financeSliderSection.classList.toggle('hidden', goal.category !== 'finance');
+                if (elements.financeProgressText) elements.financeProgressText.classList.toggle('hidden', goal.category !== 'finance');
+                if (goal.category === 'finance') {
+                    const target = goal.targetAmount || 10000;
+                    if (elements.currentAmountSlider) {
+                        elements.currentAmountSlider.max = target;
+                        elements.currentAmountSlider.value = goal.currentAmount || 0;
+                    }
+                    if (elements.currentAmountInput) {
+                        elements.currentAmountInput.max = target;
+                        elements.currentAmountInput.value = goal.currentAmount || 0;
+                    }
+                    if (elements.currentAmountLabel) elements.currentAmountLabel.textContent = `₹${formatCurrency(goal.currentAmount || 0)}`;
+                    if (elements.targetAmountLabel) elements.targetAmountLabel.textContent = `₹${formatCurrency(target)}`;
+                    if (elements.currentAmountDisplay) elements.currentAmountDisplay.textContent = formatCurrency(goal.currentAmount || 0);
+                    if (elements.targetAmountDisplay) elements.targetAmountDisplay.textContent = formatCurrency(target);
+                } else {
+                    if (elements.milestonesList) {
+                        elements.milestonesList.innerHTML = `
+                            <div class="milestones-scroll-container max-h-56 overflow-y-auto pr-2 space-y-2">
+                            </div>
+                        `;
+                        const scrollContainer = elements.milestonesList.querySelector('.milestones-scroll-container');
+                        (goal.milestones || []).forEach(milestone => {
+                            const milestoneItem = document.createElement('div');
+                            milestoneItem.className = 'flex items-center space-x-2';
+                            milestoneItem.innerHTML = `
+                                <input type="checkbox" id="milestone-${milestone.id}" class="milestone-checkbox" ${milestone.completed ? 'checked' : ''} aria-label="${milestone.text}">
+                                <label for="milestone-${milestone.id}" class="flex-grow" style="color: ${milestone.completed ? '#9ca3af' : '#e5e7eb'}; ${milestone.completed ? 'text-decoration: line-through;' : ''}">${milestone.text}</label>
+                                <button class="edit-milestone-btn text-blue-400" data-id="${milestone.id}" title="Edit milestone" aria-label="Edit milestone">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                </button>
+                                <button class="delete-milestone-btn text-red-400" data-id="${milestone.id}" title="Delete milestone" aria-label="Delete milestone">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            `;
+                            scrollContainer.appendChild(milestoneItem);
+                            const checkbox = milestoneItem.querySelector('.milestone-checkbox');
+                            if (checkbox) {
+                                checkbox.addEventListener('change', (e) => {
+                                    milestone.completed = e.target.checked;
+                                    updateGoalProgress(goal);
+                                    saveData('goals', goals);
+                                    renderGoals();
+                                });
+                            }
+                            const editBtn = milestoneItem.querySelector('.edit-milestone-btn');
+                            if (editBtn) {
+                                editBtn.addEventListener('click', () => {
+                                    const newText = prompt('Edit milestone:', milestone.text);
+                                    if (newText && newText.trim()) {
+                                        milestone.text = newText.trim();
+                                        updateGoalDetailModal(goal);
+                                        saveData('goals', goals);
+                                        renderGoals();
+                                    }
+                                });
+                            }
+                            const deleteBtn = milestoneItem.querySelector('.delete-milestone-btn');
+                            if (deleteBtn) {
+                                deleteBtn.addEventListener('click', () => {
+                                    if (confirm('Delete this milestone?')) {
+                                        goal.milestones = goal.milestones.filter(m => m.id !== milestone.id);
+                                        updateGoalProgress(goal);
+                                        saveData('goals', goals);
+                                        updateGoalDetailModal(goal);
+                                        renderGoals();
+                                    }
+                                });
+                            }
+                        });
+                    }
                 }
-
-                // ---- Delete ----
-                const deleteBtn = milestoneItem.querySelector('.delete-milestone-btn');
-                if (deleteBtn) {
-                    deleteBtn.addEventListener('click', () => {
-                        if (confirm('Delete this milestone?')) {
-                            goal.milestones = goal.milestones.filter(m => m.id !== milestone.id);
-                            updateGoalProgress(goal);
-                            saveData('goals', goals);
-                            updateGoalDetailModal(goal);
-                            renderGoals();
-                        }
-                    });
-                }
-            });
-        }
-    }
-};
-
+            };
             const renderGoalCard = (goal) => {
                 const { name, color } = getCategoryInfo(goal.category);
                 const goalCard = document.createElement('div');
@@ -913,7 +903,6 @@
                 });
                 return goalCard;
             };
-
             const renderGoals = () => {
                 if (!elements.goalsContainer || !elements.noGoalsMessage) return;
                 elements.goalsContainer.innerHTML = '';
@@ -946,7 +935,6 @@
                     elements.noGoalsMessage.classList.remove('hidden');
                 }
             };
-
             const openGoalDetail = (id) => {
                 const goal = goals.find(g => g.id === id);
                 if (!goal || !elements.goalDetailModal || !elements.detailGoalTitle) return;
@@ -955,14 +943,47 @@
                 elements.goalDetailModal.classList.remove('hidden');
                 elements.detailGoalTitle.focus();
             };
-
             const updateCategoryFields = (category) => {
                 if (elements.financeAmountField && elements.targetAmountInput) {
                     elements.financeAmountField.classList.toggle('hidden', category !== 'finance');
                     elements.targetAmountInput.toggleAttribute('required', category === 'finance');
                 }
             };
-
+            // === PROFILE: VIEW / EDIT TOGGLE ===
+            function updateProfileView() {
+                const data = {
+                    name: elements.userName.value.trim() || '—',
+                    height: elements.userHeight.value ? `${elements.userHeight.value} cm` : '—',
+                    weight: elements.userWeight.value ? `${elements.userWeight.value} kg` : '—'
+                };
+                elements.viewName.textContent = data.name;
+                elements.viewHeight.textContent = data.height;
+                elements.viewWeight.textContent = data.weight;
+            }
+            elements.editProfileBtn.addEventListener('click', () => {
+                elements.profileView.classList.add('hidden');
+                elements.profileEdit.classList.remove('hidden');
+                elements.editProfileBtn.classList.add('hidden');
+            });
+            elements.cancelProfileBtn.addEventListener('click', () => {
+                elements.profileEdit.classList.add('hidden');
+                elements.profileView.classList.remove('hidden');
+                elements.editProfileBtn.classList.remove('hidden');
+            });
+            elements.saveProfileBtn.addEventListener('click', async () => {
+                const profile = {
+                    name: elements.userName.value.trim() || 'Anonymous',
+                    height: parseInt(elements.userHeight.value) || null,
+                    weight: parseFloat(elements.userWeight.value) || null
+                };
+                await profileRef.set(profile);
+                updateProfileView();
+                elements.profileEdit.classList.add('hidden');
+                elements.profileView.classList.remove('hidden');
+                elements.editProfileBtn.classList.remove('hidden');
+                alert('Profile saved!');
+                updateWelcomeName();
+            });
             async function loadProfile() {
                 const snap = await profileRef.once('value');
                 const data = snap.val();
@@ -971,99 +992,222 @@
                     elements.userHeight.value = data.height || '';
                     elements.userWeight.value = data.weight || '';
                 }
+                updateProfileView();
             }
-
-            elements.saveProfileBtn.addEventListener('click', async () => {
-                const profile = {
-                    name: elements.userName.value.trim() || 'Anonymous',
-                    height: parseInt(elements.userHeight.value) || null,
-                    weight: parseFloat(elements.userWeight.value) || null
-                };
-                await profileRef.set(profile);
-                alert('Profile saved!');
-                updateWelcomeName();
-            });
-
+            // === NOTES: DRAGGABLE + PRESERVE LINE BREAKS ===
             async function loadNotes() {
-                const snap = await notesRef.once('value');
+            try {
+                const snapshot = await notesRef.once('value');
                 notes = [];
-                snap.forEach(child => {
-                    notes.push({ id: child.key, ...child.val() });
+                snapshot.forEach(child => {
+                    const n = child.val();
+                    n.id = child.key;
+                    notes.push(n);
                 });
+                notes.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
                 renderNotes();
+            } catch (error) {
+                console.error("Error loading notes:", error);
             }
+        }
 
-            function renderNotes() {
-                elements.notesList.innerHTML = '';
-                if (notes.length === 0) {
-                    elements.notesList.innerHTML = '<p class="text-gray-500 text-center">No notes yet. Create one!</p>';
-                    return;
-                }
-                notes.sort((a, b) => b.timestamp - a.timestamp);
-                notes.forEach(note => {
-                    const noteEl = document.createElement('div');
-                    noteEl.className = 'p-4 bg-gray-800 rounded-lg border border-gray-700';
-                    noteEl.innerHTML = `
-                        <div class="flex justify-between items-start mb-2">
-                            <h4 class="font-medium text-gray-200">${note.title || 'Untitled'}</h4>
-                            <div class="flex space-x-2">
-                                <button class="edit-note text-blue-400 text-sm" data-id="${note.id}">Edit</button>
-                                <button class="delete-note text-red-400 text-sm" data-id="${note.id}">Delete</button>
-                            </div>
+        function renderNotes() {
+            if (!elements.notesGrid) return;
+            elements.notesGrid.innerHTML = '';
+
+            if (notes.length === 0) {
+                elements.noNotesMessage.classList.remove('hidden');
+                return;
+            }
+            elements.noNotesMessage.classList.add('hidden');
+
+            notes.forEach(note => {
+                const noteCard = document.createElement('div');
+                noteCard.className = 'card p-4 rounded-xl hover:shadow-xl transition-all duration-300 cursor-grab border border-gray-700 goal-card';
+                noteCard.draggable = true;
+                noteCard.dataset.id = note.id;
+
+                noteCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-semibold text-gray-200 truncate flex-1 mr-2">${escapeHtml(note.title || 'Untitled')}</h4>
+                        <div class="flex gap-1">
+                            <button class="edit-note text-blue-400 hover:text-blue-300 text-xs" data-id="${note.id}" title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </button>
+                            <button class="delete-note text-red-400 hover:text-red-300 text-xs" data-id="${note.id}" title="Delete">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
                         </div>
-                        <p class="text-sm text-gray-400 whitespace-pre-wrap">${note.content || ''}</p>
-                        <p class="text-xs text-gray-500 mt-2">${new Date(note.timestamp).toLocaleString()}</p>
-                    `;
-                    elements.notesList.appendChild(noteEl);
+                    </div>
+                    <div class="text-sm text-gray-400 line-clamp-3 preserve-breaks">${escapeHtml(note.content || '')}</div>
+                    <p class="text-xs text-gray-500 mt-3">${new Date(note.timestamp).toLocaleDateString('en-IN')}</p>
+                `;
+
+                let isDragging = false;
+
+                noteCard.addEventListener('dragstart', (e) => {
+                    isDragging = true;
+                    noteCard.classList.add('dragging');
+                    e.dataTransfer.setData('text/plain', note.id);
                 });
 
-                document.querySelectorAll('.edit-note').forEach(btn => {
-                    btn.addEventListener('click', () => editNote(btn.dataset.id));
+                noteCard.addEventListener('dragend', () => {
+                    isDragging = false;
+                    noteCard.classList.remove('dragging');
+                    saveNotesOrder();
                 });
-                document.querySelectorAll('.delete-note').forEach(btn => {
-                    btn.addEventListener('click', () => deleteNote(btn.dataset.id));
+
+                noteCard.addEventListener('dragover', (e) => e.preventDefault());
+
+                noteCard.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const draggedId = e.dataTransfer.getData('text/plain');
+                    const droppedId = note.id;
+                    if (draggedId === droppedId) return;
+
+                    const draggedNote = notes.find(n => n.id === draggedId);
+                    const droppedNote = notes.find(n => n.id === droppedId);
+                    const draggedIdx = notes.indexOf(draggedNote);
+                    const droppedIdx = notes.indexOf(droppedNote);
+
+                    notes.splice(draggedIdx, 1);
+                    notes.splice(droppedIdx, 0, draggedNote);
+                    notes.forEach((n, i) => n.order = i);
+
+                    renderNotes();
+                    saveNotesOrder();
                 });
+
+                noteCard.addEventListener('click', (e) => {
+                    if (!isDragging && !e.target.closest('button')) {
+                        editNote(note.id);
+                    }
+                });
+
+                // Attach button listeners
+                const editBtn = noteCard.querySelector('.edit-note');
+                const deleteBtn = noteCard.querySelector('.delete-note');
+
+                editBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    editNote(note.id);
+                });
+
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteNote(note.id);
+                });
+
+                elements.notesGrid.appendChild(noteCard);
+            });
+        }
+
+        async function saveNotesOrder() {
+            const updates = {};
+            notes.forEach((note, index) => {
+                updates[note.id] = { ...note, order: index };
+            });
+            try {
+                await notesRef.update(updates);
+            } catch (err) {
+                console.error('Save notes order failed:', err);
             }
+        }
 
-            function openNoteModal(note = null) {
-                elements.noteModal.classList.remove('hidden');
-                elements.noteModalTitle.textContent = note ? 'Edit Note' : 'New Note';
-                elements.noteId.value = note?.id || '';
-                elements.noteTitle.value = note?.title || '';
-                elements.noteContent.value = note?.content || '';
-                elements.noteTitle.focus();
-            }
+        function openNoteModal(note = null) {
+            currentNoteId = note?.id || null;
+            elements.noteModal.classList.remove('hidden');
+            elements.noteModalTitle.textContent = note ? 'Edit Note' : 'New Note';
+            elements.noteId.value = note?.id || '';
+            elements.noteTitle.value = note?.title || '';
+            elements.noteContent.value = note?.content || '';
+            elements.noteTitle.focus();
+        }
 
-            async function saveNote(e) {
-                e.preventDefault();
-                const id = elements.noteId.value || notesRef.push().key;
-                const note = {
-                    title: elements.noteTitle.value.trim() || 'Untitled',
-                    content: elements.noteContent.value.trim(),
-                    timestamp: Date.now()
+        async function saveNote(e) {
+            e.preventDefault();
+
+            const title = elements.noteTitle.value.trim() || 'Untitled';
+            const content = elements.noteContent.value.trim();
+            const timestamp = Date.now();
+
+            if (currentNoteId) {
+                // UPDATE EXISTING NOTE
+                const noteIndex = notes.findIndex(n => n.id === currentNoteId);
+                if (noteIndex === -1) return;
+
+                notes[noteIndex] = {
+                    ...notes[noteIndex],
+                    title,
+                    content,
+                    timestamp
                 };
-                await notesRef.child(id).set(note);
-                closeModal(elements.noteModal, elements.noteForm);
-                loadNotes();
+
+                await notesRef.child(currentNoteId).update({
+                    title,
+                    content,
+                    timestamp
+                });
+            } else {
+                // CREATE NEW NOTE
+                const newKey = notesRef.push().key;
+                const newNote = {
+                    id: newKey,
+                    title,
+                    content,
+                    timestamp,
+                    order: notes.length
+                };
+                notes.push(newNote);
+                await notesRef.child(newKey).set(newNote);
             }
 
-            function editNote(id) {
-                const note = notes.find(n => n.id === id);
-                if (note) openNoteModal(note);
+            // Re-sort and re-save order
+            notes.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+            notes.forEach((n, i) => n.order = i);
+            await saveNotesOrder();
+
+            closeModal(elements.noteModal, elements.noteForm);
+            renderNotes();
+        }
+
+        function editNote(id) {
+            const note = notes.find(n => n.id === id);
+            if (note) openNoteModal(note);
+        }
+
+        async function deleteNote(id) {
+            if (!confirm('Delete this note permanently?')) return;
+
+            try {
+                await notesRef.child(id).remove();
+                notes = notes.filter(n => n.id !== id);
+                notes.forEach((n, i) => n.order = i);
+                await saveNotesOrder();
+                renderNotes();
+            } catch (error) {
+                console.error("Delete failed:", error);
+                alert("Failed to delete note.");
             }
+        }
 
-            async function deleteNote(id) {
-                if (confirm('Delete this note?')) {
-                    await notesRef.child(id).remove();
-                    loadNotes();
-                }
-            }
+        // Helper: Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
-            elements.addNoteBtn.addEventListener('click', () => openNoteModal());
-            elements.closeNoteModal.addEventListener('click', () => closeModal(elements.noteModal, elements.noteForm));
-            elements.cancelNoteBtn.addEventListener('click', () => closeModal(elements.noteModal, elements.noteForm));
-            elements.noteForm.addEventListener('submit', saveNote);
-
+        // Event Listeners
+        elements.addNoteBtn.addEventListener('click', () => openNoteModal());
+        elements.closeNoteModal.addEventListener('click', () => closeModal(elements.noteModal, elements.noteForm));
+        elements.cancelNoteBtn.addEventListener('click', () => closeModal(elements.noteModal, elements.noteForm));
+        elements.noteForm.addEventListener('submit', saveNote);
+        
             const setupEventListeners = () => {
                 if (elements.goalCategorySelect) {
                     elements.goalCategorySelect.addEventListener('change', () => updateCategoryFields(elements.goalCategorySelect.value));
@@ -1217,7 +1361,6 @@
                     }, 500));
                 }
             };
-
             const init = async () => {
                 await loadData('goals', goals, (goal) => {
                     goal.milestones = goal.milestones || [];
@@ -1232,8 +1375,7 @@
             };
             init();
         }
-
-        // MOTIVATIONAL LINE WITH LETTER-BY-LETTER ANIMATION
+        // MOTIVATIONAL LINE
         const motivationalLines = [
             "Your companion for reaching your goals.",
             "Dream big, achieve bigger!",
@@ -1244,34 +1386,29 @@
             "Small wins build unstoppable momentum.",
             "Your future self will thank you."
         ];
-
         let lineIndex = 0;
         const lineEl = document.getElementById('motivationalLine');
-
         function typeWriter(text, onComplete) {
-    lineEl.innerHTML = '';
-    const words = text.split(' ');
-    let i = 0;
-    const interval = setInterval(() => {
-        if (i < words.length) {
-            const span = document.createElement('span');
-            span.textContent = words[i];
-            span.style.animationDelay = `${i * 150}ms`; // Stagger words
-            span.style.display = 'inline-block';
-            lineEl.appendChild(span);
-
-            // Add space after word (except last)
-            if (i < words.length - 1) {
-                lineEl.appendChild(document.createTextNode(' '));
-            }
-            i++;
-        } else {
-            clearInterval(interval);
-            if (onComplete) setTimeout(onComplete, 3000);
+            lineEl.innerHTML = '';
+            const words = text.split(' ');
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < words.length) {
+                    const span = document.createElement('span');
+                    span.textContent = words[i];
+                    span.style.animationDelay = `${i * 150}ms`;
+                    span.style.display = 'inline-block';
+                    lineEl.appendChild(span);
+                    if (i < words.length - 1) {
+                        lineEl.appendChild(document.createTextNode(' '));
+                    }
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    if (onComplete) setTimeout(onComplete, 3000);
+                }
+            }, 150);
         }
-    }, 150);
-}
-
         function rotateLine() {
             lineEl.classList.add('fade-out');
             setTimeout(() => {
@@ -1280,13 +1417,11 @@
                 typeWriter(motivationalLines[lineIndex], rotateLine);
             }, 400);
         }
-
         function startMotivationalRotator() {
             typeWriter(motivationalLines[0], () => {
                 setTimeout(rotateLine, 3000);
             });
         }
-
         // Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
